@@ -9,6 +9,8 @@ class ShipmentRequest {
     required this.id,
     this.reference,
     this.cargoType,
+    this.truckType,
+    this.truckTypeLabel,
     this.cargoDescription,
     this.weightTons,
     this.volumeCbm,
@@ -38,6 +40,8 @@ class ShipmentRequest {
   final int id;
   final String? reference;
   final String? cargoType;
+  final String? truckType;
+  final String? truckTypeLabel;
   final String? cargoDescription;
   final double? weightTons;
   final double? volumeCbm;
@@ -89,6 +93,8 @@ class ShipmentRequest {
       id: asInt(json['id']) ?? 0,
       reference: asString(json['reference']),
       cargoType: asString(json['cargo_type']),
+      truckType: asString(json['truck_type']),
+      truckTypeLabel: asString(json['truck_type_label']),
       cargoDescription: asString(json['cargo_description']),
       weightTons: asDouble(json['weight_tons']),
       volumeCbm: asDouble(json['volume_cbm']),
@@ -129,6 +135,7 @@ class ShipmentRequest {
 class CreateShipmentPayload {
   const CreateShipmentPayload({
     required this.cargoType,
+    required this.truckType,
     this.cargoDescription,
     required this.weightTons,
     this.volumeCbm,
@@ -151,6 +158,7 @@ class CreateShipmentPayload {
   });
 
   final String cargoType;
+  final String truckType;
   final String? cargoDescription;
   final double weightTons;
   final double? volumeCbm;
@@ -174,6 +182,7 @@ class CreateShipmentPayload {
   Map<String, dynamic> toJson() {
     return {
       'cargo_type': cargoType,
+      'truck_type': truckType,
       if (cargoDescription != null && cargoDescription!.isNotEmpty)
         'cargo_description': cargoDescription,
       'weight_tons': weightTons,

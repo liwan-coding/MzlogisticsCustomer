@@ -1,53 +1,24 @@
-import 'package:flutter/foundation.dart';
-
 class AppConstants {
   AppConstants._();
 
   static const String _apiBaseUrlFromEnv = String.fromEnvironment('API_BASE_URL');
   static const String _storageBaseUrlFromEnv = String.fromEnvironment('STORAGE_BASE_URL');
 
-  /// Optional PC Wi-Fi IPv4 for a physical phone over the same network.
-  /// USB debugging does not need this: run `adb reverse tcp:8000 tcp:8000`.
-  static const String devLanHost = String.fromEnvironment('DEV_LAN_HOST');
-
-  static const int apiPort = 8000;
-  static const String lanApiHost = '192.168.100.94';
-
-  static String get apiHost {
-    if (_apiBaseUrlFromEnv.isNotEmpty) {
-      return Uri.parse(_apiBaseUrlFromEnv).host;
-    }
-    if (devLanHost.isNotEmpty) return devLanHost;
-    if (kIsWeb) {
-      final host = Uri.base.host;
-      if (host == 'localhost' || host == '127.0.0.1') {
-        return '127.0.0.1';
-      }
-      if (host.isNotEmpty) return host;
-    }
-    // Physical device on the same Wi-Fi. Override with:
-    // flutter run --dart-define=DEV_LAN_HOST=10.0.2.2  (Android emulator)
-    // USB debugging: adb reverse tcp:8000 tcp:8000 and DEV_LAN_HOST=127.0.0.1
-    return lanApiHost;
-  }
+  /// Local MoveX API. Override with `--dart-define=API_BASE_URL=...`.
+  static const String apiBaseUrlDefault = 'http://192.168.100.106:8000/api/v1';
 
   static String get apiBaseUrl {
     if (_apiBaseUrlFromEnv.isNotEmpty) return _apiBaseUrlFromEnv;
-    return 'http://$apiHost:$apiPort/api/v1';
+    return apiBaseUrlDefault;
   }
 
-  static String get apiOrigin {
-    if (_apiBaseUrlFromEnv.isNotEmpty) {
-      return Uri.parse(_apiBaseUrlFromEnv).origin;
-    }
-    return 'http://$apiHost:$apiPort';
-  }
+  static String get apiOrigin => Uri.parse(apiBaseUrl).origin;
 
   static const String appScheme = 'mzlogistics';
 
   static String get storageBaseUrl {
     if (_storageBaseUrlFromEnv.isNotEmpty) return _storageBaseUrlFromEnv;
-    return 'http://$apiHost:$apiPort/storage';
+    return '$apiOrigin/storage';
   }
 
   static const Duration connectTimeout = Duration(seconds: 12);

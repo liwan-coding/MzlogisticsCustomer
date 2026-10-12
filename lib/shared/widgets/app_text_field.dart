@@ -19,6 +19,7 @@ class AppTextField extends StatelessWidget {
     this.autofillHints,
     this.inputFormatters,
     this.textDirection,
+    this.errorText,
   });
 
   final String label;
@@ -36,6 +37,7 @@ class AppTextField extends StatelessWidget {
   final Iterable<String>? autofillHints;
   final List<TextInputFormatter>? inputFormatters;
   final TextDirection? textDirection;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +57,7 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        errorText: errorText,
         suffixIcon: suffix,
         alignLabelWithHint: maxLines > 1,
         filled: readOnly,

@@ -452,6 +452,11 @@ class _CargoRecord extends StatelessWidget {
                 icon: Icons.category_outlined,
               ),
               InfoRow(
+                label: i18n.t('shipment.truckType'),
+                value: shipment.truckTypeLabel ?? shipment.truckType ?? '—',
+                icon: Icons.local_shipping_outlined,
+              ),
+              InfoRow(
                 label: i18n.t('shipment.weight'),
                 value:
                     '${formatNumber(shipment.weightTons)} ${i18n.t('common.tons')}',

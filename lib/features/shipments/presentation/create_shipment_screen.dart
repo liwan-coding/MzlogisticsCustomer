@@ -15,8 +15,9 @@ import '../../../shared/widgets/page_scaffold.dart';
 import '../../payments/presentation/payment_contract_providers.dart';
 import '../../payments/presentation/widgets/payment_terms_fields.dart';
 import '../data/quantity_units.dart';
-import 'widgets/shipment_create_stepper.dart';
 import '../data/shipment_model.dart';
+import '../data/truck_type.dart';
+import 'widgets/shipment_create_stepper.dart';
 import '../data/shipment_repository.dart';
 import 'shipment_providers.dart';
 
@@ -29,6 +30,8 @@ class CreateShipmentScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
+  static const _otherTruckType = '__other__';
+
   final _formKey = GlobalKey<FormState>();
   final _cargoType = TextEditingController();
   final _cargoDescription = TextEditingController();
@@ -36,9 +39,11 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   final _volume = TextEditingController();
   final _quantity = TextEditingController();
   final _notes = TextEditingController();
+  final _customTruckType = TextEditingController();
   GeoLocation? _pickup;
   GeoLocation? _delivery;
   String _quantityUnit = QuantityUnits.tons;
+  String? _truckType;
   DateTime? _requiredDate;
   bool _publish = true;
   bool _submitting = false;
@@ -57,6 +62,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     _cargoType.addListener(_refreshDraft);
     _weight.addListener(_refreshDraft);
     _quantity.addListener(_refreshDraft);
+    _customTruckType.addListener(_refreshDraft);
   }
 
   void _refreshDraft() {
@@ -65,6 +71,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
 
   bool get _cargoReady {
     if (_cargoType.text.trim().isEmpty) return false;
+    if (_resolvedTruckType() == null) return false;
     if ((double.tryParse(_weight.text) ?? 0) <= 0) return false;
     if (!QuantityUnits.isTons(_quantityUnit) &&
         (double.tryParse(_quantity.text) ?? 0) <= 0) {
@@ -97,12 +104,14 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     _cargoType.removeListener(_refreshDraft);
     _weight.removeListener(_refreshDraft);
     _quantity.removeListener(_refreshDraft);
+    _customTruckType.removeListener(_refreshDraft);
     _cargoType.dispose();
     _cargoDescription.dispose();
     _weight.dispose();
     _volume.dispose();
     _quantity.dispose();
     _notes.dispose();
+    _customTruckType.dispose();
     super.dispose();
   }
 
@@ -110,6 +119,15 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     if (_step == 0) {
       if (_cargoType.text.trim().isEmpty) {
         _error = i18n.t('shipment.cargoTypeRequired');
+        return false;
+      }
+      if (ref.read(truckTypesProvider).isLoading) {
+        return false;
+      }
+      if (_resolvedTruckType() == null) {
+        _error = _writeInTruckType()
+            ? i18n.t('shipment.customTruckTypeRequired')
+            : i18n.t('shipment.truckTypeRequired');
         return false;
       }
       if ((double.tryParse(_weight.text) ?? 0) <= 0) {
@@ -183,6 +201,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
           .create(
             CreateShipmentPayload(
               cargoType: _cargoType.text.trim(),
+              truckType: _resolvedTruckType()!,
               cargoDescription: _cargoDescription.text.trim(),
               weightTons: double.parse(_weight.text),
               volumeCbm: double.tryParse(_volume.text),
@@ -520,6 +539,8 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
           controller: _cargoType,
         ),
         const SizedBox(height: 12),
+        _truckTypeField(i18n),
+        const SizedBox(height: 12),
         AppTextField(
           label: i18n.t('shipment.cargoDescription'),
           controller: _cargoDescription,
@@ -572,6 +593,139 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ],
+    );
+  }
+
+  bool _writeInTruckType() {
+    final types = ref.read(truckTypesProvider);
+    if (types.isLoading) return false;
+    if (types.hasError) return true;
+    final items = types.asData?.value ?? const <TruckTypeOption>[];
+    if (items.isEmpty) return true;
+    return _truckType == _otherTruckType;
+  }
+
+  String? _resolvedTruckType() {
+    if (_writeInTruckType()) {
+      final custom = _customTruckType.text.trim();
+      return custom.isEmpty ? null : custom;
+    }
+    if (_truckType == null ||
+        _truckType!.isEmpty ||
+        _truckType == _otherTruckType) {
+      return null;
+    }
+    return _truckType;
+  }
+
+  Widget _truckTypeField(I18nBundle i18n) {
+    final types = ref.watch(truckTypesProvider);
+    final missingChoice = _error == i18n.t('shipment.truckTypeRequired');
+    final missingCustom = _error == i18n.t('shipment.customTruckTypeRequired');
+    return types.when(
+      loading: () => InputDecorator(
+        decoration: InputDecoration(labelText: i18n.t('shipment.truckType')),
+        child: Text(
+          i18n.t('common.loading'),
+          style: const TextStyle(color: AppColors.muted),
+        ),
+      ),
+      error: (error, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            i18n.t('shipment.truckTypesFailed'),
+            style: const TextStyle(color: AppColors.danger),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AppButton(
+              label: i18n.t('common.retry'),
+              variant: AppButtonVariant.secondary,
+              onPressed: () => ref.invalidate(truckTypesProvider),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _customTruckTypeField(
+            i18n,
+            showError: missingCustom,
+            label: i18n.t('shipment.truckType'),
+          ),
+        ],
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return _customTruckTypeField(
+            i18n,
+            showError: missingCustom,
+            label: i18n.t('shipment.truckType'),
+          );
+        }
+        final writingCustom = _truckType == _otherTruckType;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<String>(
+              key: ValueKey(_truckType ?? 'unset'),
+              initialValue: _truckType,
+              isExpanded: true,
+              hint: Text(i18n.t('shipment.chooseTruckType')),
+              decoration: InputDecoration(
+                labelText: i18n.t('shipment.truckType'),
+                errorText: missingChoice ? _error : null,
+              ),
+              items: [
+                for (final type in items)
+                  DropdownMenuItem(
+                    value: type.code,
+                    child: Text(
+                      type.displayName(i18n.locale.languageCode),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                DropdownMenuItem(
+                  value: _otherTruckType,
+                  child: Text(i18n.t('shipment.otherTruckType')),
+                ),
+              ],
+              onChanged: _submitting
+                  ? null
+                  : (value) => setState(() {
+                      _truckType = value;
+                      if (_error == i18n.t('shipment.truckTypeRequired') ||
+                          _error == i18n.t('shipment.customTruckTypeRequired')) {
+                        _error = null;
+                      }
+                    }),
+            ),
+            if (writingCustom) ...[
+              const SizedBox(height: 12),
+              _customTruckTypeField(i18n, showError: missingCustom),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _customTruckTypeField(
+    I18nBundle i18n, {
+    required bool showError,
+    String? label,
+  }) {
+    return AppTextField(
+      label: label ?? i18n.t('shipment.customTruckType'),
+      hint: i18n.t('shipment.customTruckTypeHint'),
+      controller: _customTruckType,
+      enabled: !_submitting,
+      errorText: showError ? _error : null,
+      onChanged: (_) {
+        if (_error == i18n.t('shipment.customTruckTypeRequired') ||
+            _error == i18n.t('shipment.truckTypeRequired')) {
+          setState(() => _error = null);
+        }
+      },
     );
   }
 

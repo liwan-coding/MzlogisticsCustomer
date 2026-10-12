@@ -28,6 +28,7 @@ void main() {
     expect(find.byKey(const Key('shipment-publish')), findsOneWidget);
     expect(find.byKey(const Key('shipment-compare')), findsNothing);
     expect(find.text('Cement'), findsWidgets);
+    expect(find.text('Flatbed'), findsOneWidget);
     expect(find.textContaining('Sohar'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -130,6 +131,8 @@ ShipmentRequest _shipment({
     id: 7,
     reference: 'SR-7',
     cargoType: cargoType,
+    truckType: 'flatbed',
+    truckTypeLabel: 'Flatbed',
     cargoDescription: 'Bulk bags, keep dry',
     weightTons: 18,
     quantity: 18,
@@ -154,6 +157,7 @@ const _english = I18nBundle(
     'shipment.requiredDate': 'Required date',
     'shipment.cargo': 'Cargo',
     'shipment.cargoType': 'Cargo type',
+    'shipment.truckType': 'Vehicle type',
     'shipment.cargoDescription': 'Cargo description',
     'shipment.weight': 'Weight (tons)',
     'shipment.volume': 'Volume (m³)',
@@ -212,6 +216,7 @@ const _arabic = I18nBundle(
     'shipment.requiredDate': 'التاريخ المطلوب',
     'shipment.cargo': 'البضاعة',
     'shipment.cargoType': 'نوع البضاعة',
+    'shipment.truckType': 'نوع المركبة',
     'shipment.cargoDescription': 'وصف البضاعة',
     'shipment.weight': 'الوزن (طن)',
     'shipment.volume': 'الحجم (م³)',
