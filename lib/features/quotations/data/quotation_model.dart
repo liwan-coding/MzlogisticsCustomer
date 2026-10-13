@@ -7,7 +7,10 @@ class Quotation {
     this.reference,
     this.shipmentRequestId,
     this.totalPrice,
+    this.transportPrice,
     this.pricePerTrip,
+    this.pricePerTon,
+    this.pricingBasis,
     this.currency,
     this.truckCount,
     this.truckType,
@@ -29,7 +32,10 @@ class Quotation {
   final String? reference;
   final int? shipmentRequestId;
   final double? totalPrice;
+  final double? transportPrice;
   final double? pricePerTrip;
+  final double? pricePerTon;
+  final String? pricingBasis;
   final String? currency;
   final int? truckCount;
   final String? truckType;
@@ -56,7 +62,10 @@ class Quotation {
       reference: asString(json['reference']),
       shipmentRequestId: asInt(json['shipment_request_id']),
       totalPrice: asDouble(json['total_price']),
+      transportPrice: asDouble(json['transport_price']),
       pricePerTrip: asDouble(json['price_per_trip']),
+      pricePerTon: asDouble(json['price_per_ton']),
+      pricingBasis: asString(json['pricing_basis']),
       currency: asString(json['currency']) ?? 'OMR',
       truckCount: asInt(json['truck_count']),
       truckType: asString(json['truck_type']),

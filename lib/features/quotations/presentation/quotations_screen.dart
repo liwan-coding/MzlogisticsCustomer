@@ -268,6 +268,13 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
   }
 }
 
+bool _showsTransportPrice(double? transport, double? total) {
+  if (transport == null || total == null) {
+    return false;
+  }
+  return (transport - total).abs() > 0.0005;
+}
+
 bool _matchesQuotation(String? status, _QuotationFilter filter) {
   return switch (filter) {
     _QuotationFilter.all => true,
@@ -363,10 +370,12 @@ class _QuotationCard extends StatelessWidget {
                       color: AppColors.navy,
                     ),
                   ),
-                  if (quotation.pricePerTrip != null) ...[
+                  if (quotation.pricePerTon != null || quotation.pricePerTrip != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${i18n.t('quotation.pricePerTrip')}: ${formatAmount(quotation.pricePerTrip, currency: quotation.currency ?? 'OMR')}',
+                      quotation.pricePerTon != null
+                          ? '${i18n.t('quotation.pricePerTon')}: ${formatAmount(quotation.pricePerTon, currency: quotation.currency ?? 'OMR')}'
+                          : '${i18n.t('quotation.pricePerTrip')}: ${formatAmount(quotation.pricePerTrip, currency: quotation.currency ?? 'OMR')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                         fontWeight: FontWeight.w600,
@@ -402,6 +411,14 @@ class _QuotationCard extends StatelessWidget {
                     i18n.t('quotation.transportStart'),
                     formatDate(quotation.transportStartDate, locale: locale),
                   ),
+                  if (_showsTransportPrice(quotation.transportPrice, quotation.totalPrice))
+                    _line(
+                      i18n.t('quotation.transport'),
+                      formatAmount(
+                        quotation.transportPrice,
+                        currency: quotation.currency ?? 'OMR',
+                      ),
+                    ),
                   _line(
                     i18n.t('quotation.extra'),
                     formatAmount(
@@ -491,7 +508,16 @@ class QuotationDetailScreen extends ConsumerWidget {
                       label: i18n.status(status),
                     ),
                     facts: [
-                      if (quotation.pricePerTrip != null)
+                      if (quotation.pricePerTon != null)
+                        EntityFact(
+                          i18n.t('quotation.pricePerTon'),
+                          formatAmount(
+                            quotation.pricePerTon,
+                            currency: quotation.currency ?? 'OMR',
+                          ),
+                          icon: Icons.scale_outlined,
+                        )
+                      else if (quotation.pricePerTrip != null)
                         EntityFact(
                           i18n.t('quotation.pricePerTrip'),
                           formatAmount(
