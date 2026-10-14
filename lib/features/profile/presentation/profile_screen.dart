@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/i18n/i18n_controller.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/breakpoints.dart';
+import '../../../shared/widgets/app_appear.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/loading_state.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'widgets/profile_edit_sheets.dart';
 import 'widgets/profile_sections.dart';
@@ -19,7 +20,7 @@ class ProfileScreen extends ConsumerWidget {
     final i18n = ref.i18n;
     final user = ref.watch(authControllerProvider).user;
     if (user == null) {
-      return LoadingState(label: i18n.t('common.loading'));
+      return PageScrollView(child: LoadingState(label: i18n.t('common.loading')));
     }
 
     final account = ProfileAccountCard(
@@ -31,6 +32,7 @@ class ProfileScreen extends ConsumerWidget {
       i18n: i18n,
       organization: user.organization,
     );
+    final contact = ProfileContactCard(i18n: i18n);
     final settings = ProfileSettingsCard(
       i18n: i18n,
       selectedLanguage: i18n.locale.languageCode,
@@ -42,40 +44,55 @@ class ProfileScreen extends ConsumerWidget {
 
     const gap = 22.0;
 
-    return ContentWidth(
-      child: RefreshIndicator(
-        color: AppColors.navy,
-        onRefresh: () async {
-          await ref.read(authControllerProvider.notifier).refreshProfile();
-        },
-        child: ListView(
+    return PageScrollView(
+      child: ContentWidth(
+      child: PageList(
           physics: const AlwaysScrollableScrollPhysics(),
+          onRefresh: () async {
+            await ref.read(authControllerProvider.notifier).refreshProfile();
+          },
           children: [
-            ProfileIdentityHeader(i18n: i18n, user: user),
+            AppAppear(
+              index: 0,
+              child: ProfileIdentityHeader(i18n: i18n, user: user),
+            ),
             const SizedBox(height: gap),
             if (wide)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        account,
-                        const SizedBox(height: gap),
-                        organization,
-                      ],
+              AppAppear(
+                index: 1,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          account,
+                          const SizedBox(height: gap),
+                          organization,
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(child: settings),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          contact,
+                          const SizedBox(height: gap),
+                          settings,
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               )
             else ...[
-              account,
+              AppAppear(index: 1, child: account),
               const SizedBox(height: gap),
-              organization,
+              AppAppear(index: 2, child: organization),
               const SizedBox(height: gap),
-              settings,
+              AppAppear(index: 3, child: contact),
+              const SizedBox(height: gap),
+              AppAppear(index: 4, child: settings),
             ],
             const SizedBox(height: 8),
           ],

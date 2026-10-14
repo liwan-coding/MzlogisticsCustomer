@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_theme.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
 
@@ -50,23 +49,9 @@ class AppButton extends StatelessWidget {
     );
 
     final button = switch (variant) {
-      AppButtonVariant.primary => DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: enabled ? AppColors.primaryGradient : null,
-            color: enabled ? null : AppColors.mist,
-            borderRadius: BorderRadius.circular(AppTheme.radius),
-          ),
-          child: ElevatedButton(
-            onPressed: enabled ? onPressed : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              disabledBackgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              foregroundColor: AppColors.onAccent,
-              elevation: 0,
-            ),
-            child: child,
-          ),
+      AppButtonVariant.primary => ElevatedButton(
+          onPressed: enabled ? onPressed : null,
+          child: child,
         ),
       AppButtonVariant.secondary => OutlinedButton(
           onPressed: enabled ? onPressed : null,

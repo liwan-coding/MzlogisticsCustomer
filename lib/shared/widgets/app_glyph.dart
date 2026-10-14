@@ -21,8 +21,8 @@ class AppGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = switch (tone) {
-      AppGlyphTone.navy => (AppColors.navySoft, AppColors.navy),
-      AppGlyphTone.neon => (AppColors.amberSoft, AppColors.onNeon),
+      AppGlyphTone.navy => (AppColors.navySoft, AppColors.orange),
+      AppGlyphTone.neon => (AppColors.successSoft, AppColors.success),
       AppGlyphTone.muted => (AppColors.mist, AppColors.muted),
       AppGlyphTone.success => (AppColors.successSoft, AppColors.success),
       AppGlyphTone.danger => (AppColors.dangerSoft, AppColors.danger),
@@ -36,7 +36,7 @@ class AppGlyph extends StatelessWidget {
         color: colors.$1,
         borderRadius: BorderRadius.circular(size * 0.32),
         border: tone == AppGlyphTone.neon
-            ? Border.all(color: AppColors.accentFrom.withValues(alpha: 0.55))
+            ? Border.all(color: AppColors.success.withValues(alpha: 0.28))
             : null,
       ),
       child: Icon(icon, color: colors.$2, size: iconSize ?? size * 0.48),

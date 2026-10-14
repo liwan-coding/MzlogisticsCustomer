@@ -14,6 +14,7 @@ import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/entity_summary_card.dart';
 import '../../../shared/widgets/loading_state.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../shipments/data/shipment_model.dart';
 import '../../shipments/presentation/shipment_providers.dart';
@@ -186,7 +187,7 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
 
           if (visible.isEmpty) {
             return ContentWidth(
-              child: ListView(
+              child: PageList(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   toolbar,
@@ -205,7 +206,7 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
 
           if (context.isDesktop) {
             return ContentWidth(
-              child: ListView(
+              child: PageList(
                 children: [
                   toolbar,
                   const SizedBox(height: 16),
@@ -214,18 +215,19 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
                     style: const TextStyle(color: AppColors.muted, height: 1.4),
                   ),
                   const SizedBox(height: 16),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (final quotation in visible)
-                          SizedBox(
-                            width: 320,
-                            child: Padding(
-                              padding: const EdgeInsetsDirectional.only(
-                                end: 12,
-                              ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 16.0;
+                      final columns = constraints.maxWidth >= 980 ? 3 : 2;
+                      final width =
+                          (constraints.maxWidth - gap * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final quotation in visible)
+                            SizedBox(
+                              width: width,
                               child: _QuotationCard(
                                 quotation: quotation,
                                 i18n: i18n,
@@ -236,9 +238,9 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
                                     context.push('/quotations/${quotation.id}'),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -313,7 +315,7 @@ class _QuotationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ColoredBox(
-              color: bestPrice ? AppColors.accentFrom : AppColors.navy,
+              color: bestPrice ? AppColors.orange : AppColors.border,
               child: const SizedBox(height: 3),
             ),
             Padding(
@@ -332,9 +334,12 @@ class _QuotationCard extends StatelessWidget {
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
-                      StatusBadge(
-                        status: quotation.status ?? '',
-                        label: i18n.status(quotation.status),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 132),
+                        child: StatusBadge(
+                          status: quotation.status ?? '',
+                          label: i18n.status(quotation.status),
+                        ),
                       ),
                     ],
                   ),
@@ -367,7 +372,7 @@ class _QuotationCard extends StatelessWidget {
                     ),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: AppColors.ink,
                     ),
                   ),
                   if (quotation.pricePerTon != null || quotation.pricePerTrip != null) ...[
@@ -461,9 +466,23 @@ class _QuotationCard extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: AppColors.muted)),
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.muted),
+            ),
           ),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
         ],
       ),
     );
@@ -490,7 +509,7 @@ class QuotationDetailScreen extends ConsumerWidget {
           final locale = i18n.locale.languageCode;
           final status = quotation.status ?? '';
           return ContentWidth(
-            child: ListView(
+            child: PageList(
               children: [
                 AppAppear(
                   index: 0,

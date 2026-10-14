@@ -31,125 +31,89 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   static const double _toolbar = 64;
   static const double _toolbarWithSubtitle = 78;
-  static const double _accent = 10;
-  static const double _bottomRadius = 28;
 
-  double get _toolbarHeight =>
-      subtitle == null ? _toolbar : _toolbarWithSubtitle;
+  double get _toolbarHeight => subtitle == null ? _toolbar : _toolbarWithSubtitle;
 
   @override
-  Size get preferredSize => Size.fromHeight(_toolbarHeight + _accent);
+  Size get preferredSize => Size.fromHeight(_toolbarHeight);
 
   @override
   Widget build(BuildContext context) {
     final back = showBack ?? context.canPop();
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: SystemUiOverlayStyle.dark,
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.surface,
         child: DecoratedBox(
           decoration: const BoxDecoration(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(_bottomRadius),
-            ),
-            gradient: LinearGradient(
-              begin: AlignmentDirectional.topStart,
-              end: AlignmentDirectional.bottomEnd,
-              colors: [
-                AppColors.headerFrom,
-                AppColors.navyDeep,
-                AppColors.navy,
-              ],
-            ),
+            color: AppColors.surface,
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
           child: SafeArea(
             bottom: false,
             child: SizedBox(
-              height: _toolbarHeight + _accent,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: _toolbarHeight,
-                    child: Row(
-                      children: [
-                        if (back)
-                          IconButton(
-                            tooltip: MaterialLocalizations.of(context)
-                                .backButtonTooltip,
-                            icon: const BackButtonIcon(),
-                            color: AppColors.white,
-                            onPressed: onBack ?? () => popToParent(context),
-                          )
-                        else
-                          const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
+              height: _toolbarHeight,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 48) return const SizedBox.expand();
+                  return Row(
+                    children: [
+                      if (back)
+                        IconButton(
+                          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                          icon: const BackButtonIcon(),
+                          color: AppColors.ink,
+                          onPressed: onBack ?? () => popToParent(context),
+                        )
+                      else
+                        const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 2),
                               Text(
-                                title,
+                                subtitle!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                               ),
-                              if (subtitle != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  subtitle!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: AppColors.navyMuted),
-                                ),
-                              ],
                             ],
-                          ),
+                          ],
                         ),
-                        IconTheme(
-                          data: const IconThemeData(color: AppColors.white),
+                      ),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.46),
+                        child: IconTheme(
+                          data: const IconThemeData(color: AppColors.ink),
                           child: DefaultTextStyle.merge(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: AppColors.white,
+                              color: AppColors.ink,
                               fontWeight: FontWeight.w600,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: [...?actions, const SizedBox(width: 8)],
+                              children: [...?actions, const SizedBox(width: 4)],
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 7),
-                    child: SizedBox(
-                      height: 3,
-                      width: double.infinity,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(20),
-                          ),
-                          gradient: LinearGradient(
-                            begin: AlignmentDirectional.centerStart,
-                            end: AlignmentDirectional.centerEnd,
-                            colors: [
-                              AppColors.accentFrom,
-                              AppColors.accentTo.withValues(alpha: 0.4),
-                              AppColors.accentTo.withValues(alpha: 0),
-                            ],
-                          ),
-                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ),

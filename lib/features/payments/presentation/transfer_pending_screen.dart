@@ -15,6 +15,7 @@ import '../../../shared/widgets/app_glyph.dart';
 import '../../../shared/widgets/entity_summary_card.dart';
 import '../../../shared/widgets/info_row.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../data/bank_account.dart';
 import '../data/payment_repository.dart';
@@ -209,7 +210,7 @@ class _TransferPendingScreenState extends ConsumerState<TransferPendingScreen> {
       title: i18n.t('payment.transferTitle'),
       showBack: true,
       body: ContentWidth(
-        child: ListView(
+        child: PageList(
           children: [
             summary,
             const SizedBox(height: 16),

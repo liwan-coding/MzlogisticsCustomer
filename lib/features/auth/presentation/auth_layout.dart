@@ -22,11 +22,12 @@ class AuthLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.i18n;
     final localeCode = i18n.locale.languageCode;
+    final narrow = MediaQuery.sizeOf(context).width < 400;
     final form = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 440),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+          padding: EdgeInsets.fromLTRB(narrow ? 16 : 28, narrow ? 22 : 32, narrow ? 16 : 28, narrow ? 18 : 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -78,11 +79,19 @@ class AuthLayout extends ConsumerWidget {
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 'en',
-                        child: Text(i18n.t('common.english')),
+                        height: 44,
+                        child: _LanguageChoice(
+                          label: i18n.t('common.english'),
+                          selected: localeCode == 'en',
+                        ),
                       ),
                       PopupMenuItem(
                         value: 'ar',
-                        child: Text(i18n.t('common.arabic')),
+                        height: 44,
+                        child: _LanguageChoice(
+                          label: i18n.t('common.arabic'),
+                          selected: localeCode == 'ar',
+                        ),
                       ),
                     ],
                     child: const _LanguageButton(),
@@ -160,6 +169,33 @@ class AuthLayout extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LanguageChoice extends StatelessWidget {
+  const _LanguageChoice({required this.label, required this.selected});
+
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.ink,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+        ),
+        if (selected) ...[
+          const SizedBox(width: 12),
+          const Icon(Icons.check_rounded, size: 18, color: AppColors.orange),
+        ],
+      ],
     );
   }
 }

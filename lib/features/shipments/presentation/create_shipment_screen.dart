@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/i18n_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/breakpoints.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/geo_location.dart';
+import '../../../shared/widgets/app_appear.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/location_picker_field.dart';
 import '../../../shared/widgets/page_scaffold.dart';
@@ -54,7 +56,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   String _billingUnit = 'job';
   int _dueDays = 0;
   bool _paymentPrefillDone = false;
-  final List<GlobalKey> _stageKeys = List.generate(3, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -67,36 +68,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
 
   void _refreshDraft() {
     if (mounted) setState(() {});
-  }
-
-  bool get _cargoReady {
-    if (_cargoType.text.trim().isEmpty) return false;
-    if (_resolvedTruckType() == null) return false;
-    if ((double.tryParse(_weight.text) ?? 0) <= 0) return false;
-    if (!QuantityUnits.isTons(_quantityUnit) &&
-        (double.tryParse(_quantity.text) ?? 0) <= 0) {
-      return false;
-    }
-    return true;
-  }
-
-  bool get _routeReady {
-    final pickup = _pickup;
-    final delivery = _delivery;
-    if (pickup == null || pickup.city.isEmpty || !pickup.hasCoordinates) {
-      return false;
-    }
-    if (delivery == null || delivery.city.isEmpty || !delivery.hasCoordinates) {
-      return false;
-    }
-    return true;
-  }
-
-  int get _desktopStage {
-    if (!_cargoReady) return 0;
-    if (!_routeReady) return 1;
-    if (_requiredDate == null) return 2;
-    return 3;
   }
 
   @override
@@ -247,7 +218,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = ref.i18n;
-    final desktop = context.isDesktop;
     final contractAsync = ref.watch(paymentContractProvider);
     contractAsync.whenData((contract) {
       if (_paymentPrefillDone) return;
@@ -282,31 +252,26 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
       i18n.t('shipment.stepRouteHint'),
       i18n.t('shipment.stepScheduleHint'),
     ];
-    final stage = desktop ? _desktopStage : _step;
-
     return PageScaffold(
       title: i18n.t('shipment.create'),
       showBack: true,
       body: ContentWidth(
-        maxWidth: 880,
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: PageList(
             children: [
               ShipmentCreateStepper(
                 steps: steps,
-                current: stage,
+                current: _step,
                 progressLabel: i18n.t('shipment.stepProgress', {
-                  'current': '${(stage.clamp(0, steps.length - 1)) + 1}',
+                  'current': '${_step + 1}',
                   'total': '${steps.length}',
                 }),
-                canSelect: desktop ? null : (index) => index <= _step,
-                onSelect: (index) =>
-                    desktop ? _revealStage(index) : _selectStep(index),
+                canSelect: (index) => index <= _step,
+                onSelect: _selectStep,
               ),
-              if (!desktop) ...[
-                const SizedBox(height: 18),
-                AnimatedSwitcher(
+              const SizedBox(height: 18),
+              AnimatedSwitcher(
                   duration: MediaQuery.disableAnimationsOf(context)
                       ? Duration.zero
                       : const Duration(milliseconds: 380),
@@ -338,7 +303,9 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                   },
                   child: KeyedSubtree(
                     key: ValueKey(_step),
-                    child: Column(
+                    child: AppAppear(
+                      index: _step,
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
@@ -354,7 +321,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                         ),
                         const SizedBox(height: 16),
                         _stageCard(
-                          index: _step,
                           title: steps[_step].label,
                           hint: hints[_step],
                           icon: steps[_step].icon,
@@ -367,67 +333,17 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                         ),
                       ],
                     ),
+                    ),
                   ),
-                ),
-              ],
-              if (desktop) ...[
-                const SizedBox(height: 16),
-                _stageCard(
-                  index: 0,
-                  title: steps[0].label,
-                  hint: hints[0],
-                  icon: steps[0].icon,
-                  child: _cargoFields(i18n),
-                ),
-                const SizedBox(height: 16),
-                _stageCard(
-                  index: 1,
-                  title: steps[1].label,
-                  hint: hints[1],
-                  icon: steps[1].icon,
-                  child: _routeFields(i18n),
-                ),
-                const SizedBox(height: 16),
-                _stageCard(
-                  index: 2,
-                  title: steps[2].label,
-                  hint: hints[2],
-                  icon: steps[2].icon,
-                  child: _scheduleFields(i18n),
-                ),
-              ],
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: const TextStyle(color: AppColors.danger)),
               ],
               const SizedBox(height: 20),
-              if (desktop)
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        label: i18n.t('shipment.saveDraft'),
-                        variant: AppButtonVariant.secondary,
-                        loading: _submitting && !_publish,
-                        onPressed: _submitting
-                            ? null
-                            : () => _submit(publish: false),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        label: i18n.t('shipment.publish'),
-                        loading: _submitting && _publish,
-                        onPressed: _submitting
-                            ? null
-                            : () => _submit(publish: true),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Row(
+              AppAppear(
+                index: 1,
+                child: Row(
                   children: [
                     if (_step > 0)
                       Expanded(
@@ -463,7 +379,8 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                     ),
                   ],
                 ),
-              if (!desktop && _step == 2) ...[
+              ),
+              if (_step == 2) ...[
                 const SizedBox(height: 8),
                 AppButton(
                   label: i18n.t('shipment.saveDraft'),
@@ -492,21 +409,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     });
   }
 
-  void _revealStage(int index) {
-    final target = _stageKeys[index].currentContext;
-    if (target == null) return;
-    Scrollable.ensureVisible(
-      target,
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
-      alignment: 0.02,
-    );
-  }
-
   Widget _stageCard({
-    required int index,
     required String title,
     required String hint,
     required IconData icon,
@@ -514,7 +417,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     bool showHeading = true,
   }) {
     return Card(
-      key: _stageKeys[index],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -666,32 +568,24 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DropdownButtonFormField<String>(
-              key: ValueKey(_truckType ?? 'unset'),
-              initialValue: _truckType,
-              isExpanded: true,
-              hint: Text(i18n.t('shipment.chooseTruckType')),
-              decoration: InputDecoration(
-                labelText: i18n.t('shipment.truckType'),
-                errorText: missingChoice ? _error : null,
-              ),
-              items: [
+            AppDropdown<String>(
+              label: i18n.t('shipment.truckType'),
+              hint: i18n.t('shipment.chooseTruckType'),
+              value: _truckType,
+              errorText: missingChoice ? _error : null,
+              enabled: !_submitting,
+              options: [
                 for (final type in items)
-                  DropdownMenuItem(
+                  AppDropdownOption(
                     value: type.code,
-                    child: Text(
-                      type.displayName(i18n.locale.languageCode),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    label: type.displayName(i18n.locale.languageCode),
                   ),
-                DropdownMenuItem(
+                AppDropdownOption(
                   value: _otherTruckType,
-                  child: Text(i18n.t('shipment.otherTruckType')),
+                  label: i18n.t('shipment.otherTruckType'),
                 ),
               ],
-              onChanged: _submitting
-                  ? null
-                  : (value) => setState(() {
+              onChanged: (value) => setState(() {
                       _truckType = value;
                       if (_error == i18n.t('shipment.truckTypeRequired') ||
                           _error == i18n.t('shipment.customTruckTypeRequired')) {

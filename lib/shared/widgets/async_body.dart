@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import 'empty_state.dart';
 import 'error_state.dart';
 import 'loading_state.dart';
+import 'page_scroll.dart';
 
 class AsyncBody<T> extends StatelessWidget {
   const AsyncBody({
@@ -54,6 +55,13 @@ class AsyncBody<T> extends StatelessWidget {
         return builder(data);
       },
     );
+
+    if (PageScrollMark.maybeOf(context) != null) {
+      if (onRefresh != null && !value.isLoading) {
+        PageRefresh.maybeOf(context)?.report(onRefresh);
+      }
+      return content;
+    }
 
     if (onRefresh == null || value.isLoading) return content;
 

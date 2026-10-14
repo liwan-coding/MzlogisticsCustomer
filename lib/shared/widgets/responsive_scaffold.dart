@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -6,9 +7,9 @@ import '../../core/i18n/i18n_controller.dart';
 import '../../core/router/section_paths.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/breakpoints.dart';
 import 'app_header.dart';
-import 'brand_mark.dart';
+import 'hero_title_scope.dart';
+import 'inner_hero_band.dart';
 
 class ShellDestination {
   const ShellDestination({
@@ -120,33 +121,51 @@ class ResponsiveScaffold extends StatelessWidget {
       actions: [_NotificationButton(i18n: i18n, unreadCount: unreadCount)],
     );
 
+    final isHome = location == '/home';
+    final topBar = Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 14,
+        20,
+        0,
+      ),
+      child: _TopBar(
+        i18n: i18n,
+        destinations: destinations,
+        selectedIndex: selected,
+        userName: userName,
+        unreadCount: unreadCount,
+        onSelect: (index) => _openDestination(destinations, index),
+      ),
+    );
     final scaffold = isDesktop
         ? Scaffold(
-            body: Row(
-              children: [
-                _SideNav(
-                  i18n: i18n,
-                  destinations: destinations,
-                  selectedIndex: selected,
-                  userName: userName,
-                  onSelect: (index) => _openDestination(destinations, index),
-                ),
-                Expanded(
-                  child: sectionRoot
-                      ? Column(
-                          children: [
-                            SizedBox(
-                              height: header.preferredSize.height,
-                              width: double.infinity,
-                              child: header,
-                            ),
-                            Expanded(child: navigationShell),
-                          ],
-                        )
-                      : navigationShell,
-                ),
-              ],
-            ),
+            backgroundColor: const Color(0xFFF7F8FB),
+            body: isHome
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      navigationShell,
+                      PositionedDirectional(
+                        top: 0,
+                        start: 0,
+                        end: 0,
+                        child: topBar,
+                      ),
+                    ],
+                  )
+                : HeroBandHost(
+                    location: location,
+                    header: topBar,
+                    pinned: sectionRoot
+                        ? HeroTitleData(
+                            title: i18n.t(headerDestination.labelKey),
+                            subtitle: _subtitle(headerDestination.location),
+                            showBack: false,
+                          )
+                        : null,
+                    child: navigationShell,
+                  ),
           )
         : Scaffold(
             appBar: sectionRoot ? header : null,
@@ -229,6 +248,63 @@ class ResponsiveScaffold extends StatelessWidget {
   }
 }
 
+/// The home header, kept above pages that open outside the shell.
+class DesktopHeaderFrame extends StatelessWidget {
+  const DesktopHeaderFrame({
+    super.key,
+    required this.child,
+    required this.i18n,
+    required this.userName,
+    this.unreadCount = 0,
+  });
+
+  final Widget child;
+  final I18nBundle i18n;
+  final String userName;
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.sizeOf(context).width < AppConstants.desktopBreakpoint) {
+      return child;
+    }
+
+    final destinations = shellDestinations
+        .where((item) => item.location != '/billing')
+        .toList();
+    final location = normalizeLocation(GoRouterState.of(context).uri.path);
+    final section = sectionFallback(location);
+    var selected = destinations.indexWhere(
+      (item) => item.location == location || item.location == section,
+    );
+    if (selected < 0) selected = 0;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FB),
+      body: HeroBandHost(
+        location: location,
+        header: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            MediaQuery.paddingOf(context).top + 14,
+            20,
+            0,
+          ),
+          child: _TopBar(
+            i18n: i18n,
+            destinations: destinations,
+            selectedIndex: selected,
+            userName: userName,
+            unreadCount: unreadCount,
+            onSelect: (index) => context.go(destinations[index].location),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 class _BottomNavBar extends StatelessWidget {
   const _BottomNavBar({
     required this.i18n,
@@ -254,7 +330,7 @@ class _BottomNavBar extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 64,
+            height: 68,
             child: Row(
               children: [
                 for (var index = 0; index < destinations.length; index++)
@@ -297,7 +373,10 @@ class _BottomNavItem extends StatelessWidget {
       label: label,
       child: InkWell(
         onTap: onTap,
-        child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxHeight < 36) return const SizedBox.expand();
+            return Column(
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
@@ -311,7 +390,7 @@ class _BottomNavItem extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -319,9 +398,9 @@ class _BottomNavItem extends StatelessWidget {
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOut,
                       width: 36,
-                      height: 32,
+                      height: 30,
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.mist : Colors.transparent,
+                        color: selected ? AppColors.navySoft : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                       ),
                       child: Icon(
@@ -331,17 +410,20 @@ class _BottomNavItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: color,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        fontSize: 11,
-                        height: 1.1,
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          fontSize: 11,
+                          height: 1.1,
+                        ),
                       ),
                     ),
                   ],
@@ -349,18 +431,21 @@ class _BottomNavItem extends StatelessWidget {
               ),
             ),
           ],
+        );
+          },
         ),
       ),
     );
   }
 }
 
-class _SideNav extends StatelessWidget {
-  const _SideNav({
+class _TopBar extends StatelessWidget {
+  const _TopBar({
     required this.i18n,
     required this.destinations,
     required this.selectedIndex,
     required this.userName,
+    required this.unreadCount,
     required this.onSelect,
   });
 
@@ -368,147 +453,247 @@ class _SideNav extends StatelessWidget {
   final List<ShellDestination> destinations;
   final int selectedIndex;
   final String userName;
+  final int unreadCount;
   final ValueChanged<int> onSelect;
+
+  static const _ink = Color(0xFF1C2430);
+  static const _orange = Color(0xFFF15A22);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: context.isWide ? 276 : 260,
-      color: AppColors.navyDeep,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
-              child: Row(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x241C2430),
+            blurRadius: 28,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: const Color(0xD4FFFFFF),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0x66FFFFFF)),
+          ),
+          child: SizedBox(
+          height: 64,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
                 children: [
-                  const BrandMark(size: 40, light: true),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          i18n.t('app.name'),
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: _Wordmark(name: i18n.t('app.name')),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var index = 0; index < destinations.length; index++)
+                        _TopNavItem(
+                          label: i18n.t(destinations[index].labelKey),
+                          selected: index == selectedIndex,
+                          onTap: () => onSelect(index),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          i18n.t('app.customer'),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.navyMuted),
+                    ],
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _LanguageControl(i18n: i18n),
+                            _NotificationButton(
+                              i18n: i18n,
+                              unreadCount: unreadCount,
+                            ),
+                            const SizedBox(width: 4),
+                            _UserChip(name: userName, role: i18n.t('app.customer')),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: destinations.length,
-                itemBuilder: (context, index) {
-                  final item = destinations[index];
-                  final selected = index == selectedIndex;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Material(
-                      color: selected
-                          ? const Color(0x1AFFFFFF)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppTheme.radius),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppTheme.radius),
-                        onTap: () => onSelect(index),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                selected ? item.selectedIcon : item.icon,
-                                color: selected
-                                    ? AppColors.amber
-                                    : AppColors.navyMuted,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  i18n.t(item.labelKey),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.white,
-                                        fontWeight: selected
-                                            ? FontWeight.w600
-                                            : FontWeight.w400,
-                                      ),
-                                ),
-                              ),
-                              if (selected)
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    gradient: AppColors.accentGradient,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Wordmark extends StatelessWidget {
+  const _Wordmark({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final index = name.lastIndexOf('X');
+    final style = Theme.of(context).textTheme.titleLarge?.copyWith(
+      color: _TopBar._ink,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.4,
+    );
+    if (index < 0) return Text(name, style: style);
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          TextSpan(text: name.substring(0, index)),
+          TextSpan(
+            text: name.substring(index, index + 1),
+            style: const TextStyle(color: _TopBar._orange),
+          ),
+          TextSpan(text: name.substring(index + 1)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopNavItem extends StatelessWidget {
+  const _TopNavItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? _TopBar._orange : Colors.black;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                height: 2,
+                width: selected ? 28 : 0,
+                decoration: BoxDecoration(
+                  color: _TopBar._orange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageControl extends ConsumerWidget {
+  const _LanguageControl({required this.i18n});
+
+  final I18nBundle i18n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final arabic = i18n.locale.languageCode == 'ar';
+    return TextButton.icon(
+      onPressed: () {
+        ref.read(i18nControllerProvider.notifier).setLocale(arabic ? 'en' : 'ar');
+      },
+      icon: const Icon(Icons.language, size: 18, color: Colors.black),
+      label: Text(
+        arabic ? 'العربية' : 'English',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.black,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _UserChip extends StatelessWidget {
+  const _UserChip({required this.name, required this.role});
+
+  final String name;
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.trim().isEmpty ? 'C' : name.trim().substring(0, 1).toUpperCase();
+    return InkWell(
+      onTap: () => context.go('/profile'),
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: const Color(0xFF1F8A70),
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0x14FFFFFF),
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: AppColors.amberSoft,
-                      child: Text(
-                        userName.isEmpty
-                            ? 'C'
-                            : userName.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.onNeon,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (name.trim().isNotEmpty)
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _TopBar._ink,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        userName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                Text(
+                  role,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+              ],
+            ),
             ),
           ],
         ),
@@ -532,7 +717,7 @@ class _NotificationButton extends StatelessWidget {
         isLabelVisible: unreadCount > 0,
         label: Text('$unreadCount'),
         backgroundColor: AppColors.amber,
-        child: const Icon(Icons.notifications_outlined, color: AppColors.white),
+        child: const Icon(Icons.notifications_outlined, color: Colors.black),
       ),
     );
   }

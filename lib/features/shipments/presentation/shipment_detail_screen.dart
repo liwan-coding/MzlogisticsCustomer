@@ -4,21 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/i18n_controller.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/app_appear.dart';
-import '../../../shared/widgets/app_route_line.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
-import '../../../shared/widgets/entity_summary_card.dart';
 import '../../../shared/widgets/page_scaffold.dart';
-import '../../../shared/widgets/status_badge.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../quotations/presentation/quotation_accept_flow.dart';
-import '../data/quantity_units.dart';
 import '../data/shipment_model.dart';
 import '../data/shipment_repository.dart';
 import 'shipment_providers.dart';
-import 'widgets/shipment_card.dart';
 import 'widgets/shipment_detail_sections.dart';
 
 class ShipmentDetailScreen extends ConsumerStatefulWidget {
@@ -119,9 +113,6 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
               ? shipment.quotations
               : shipment.awardedQuotations;
           final showCompare = shipment.canCompareQuotations;
-          final quoteFact = shipmentQuoteFact(i18n, shipment);
-          final decisionFirst =
-              shipment.status == 'published' || shipment.status == 'awarded';
           final showQuotes = listedQuotes.isNotEmpty || showCompare;
 
           final quotations = ShipmentQuotationsSection(
@@ -131,63 +122,22 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
           );
 
           return ContentWidth(
-            child: ListView(
+            child: PageList(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 AppAppear(
                   index: 0,
-                  child: EntitySummaryCard(
-                    title: title,
-                    subtitle: cargo != null && cargo.isNotEmpty
-                        ? reference
-                        : null,
-                    icon: shipmentStatusIcon(status),
-                    tone: shipmentStatusTone(status),
-                    accent: AppColors.statusForeground(status)
-                        .withValues(alpha: 0.85),
-                    badge: StatusBadge(
-                      status: status,
-                      label: i18n.status(status),
-                    ),
-                    facts: [
-                      EntityFact(
-                        i18n.t('shipment.requiredDate'),
-                        formatDate(shipment.requiredDate, locale: locale),
-                        icon: Icons.event_outlined,
-                      ),
-                      EntityFact(
-                        i18n.t('shipment.cargo'),
-                        QuantityUnits.cargoSummary(
-                          i18n,
-                          weightTons: shipment.weightTons,
-                          quantity: shipment.quantity,
-                          unit: shipment.quantityUnit,
-                        ),
-                        icon: Icons.inventory_2_outlined,
-                      ),
-                      if (quoteFact != null)
-                        EntityFact(
-                          quoteFact.label,
-                          quoteFact.value,
-                          icon: Icons.request_quote_outlined,
-                        ),
-                    ],
-                    footer: AppRoutePanel(
-                      fromLabel: i18n.t('common.pickup'),
-                      toLabel: i18n.t('common.delivery'),
-                      from: shipment.pickupCity ?? shipment.pickupAddress ?? '—',
-                      to: shipment.deliveryCity ??
-                          shipment.deliveryAddress ??
-                          '—',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                AppAppear(
-                  index: 1,
-                  child: ShipmentNextStep(
+                  child: ShipmentSummaryPanel(
                     i18n: i18n,
                     shipment: shipment,
+                    title: title,
+                    reference: reference != null &&
+                            reference.isNotEmpty &&
+                            reference != title
+                        ? reference
+                        : null,
+                    status: status,
+                    locale: locale,
                     busy: _busy,
                     onPublish: () => _publish(shipment),
                     onCancel: () => _cancel(shipment),
@@ -195,8 +145,14 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                         context.push('/shipments/${shipment.id}/quotations'),
                   ),
                 ),
+                const SizedBox(height: 16),
+                AppAppear(
+                  index: 1,
+                  child: ShipmentRecordLayout(i18n: i18n, shipment: shipment),
+                ),
                 if (shipment.platformOffer != null &&
-                    (shipment.status == 'published' || shipment.status == 'awarded')) ...[
+                    (shipment.status == 'published' ||
+                        shipment.status == 'awarded')) ...[
                   const SizedBox(height: 16),
                   AppAppear(
                     index: 2,
@@ -217,18 +173,9 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                     ),
                   ),
                 ],
-                if (decisionFirst && showQuotes) ...[
+                if (showQuotes) ...[
                   const SizedBox(height: 16),
                   AppAppear(index: 2, child: quotations),
-                ],
-                const SizedBox(height: 16),
-                AppAppear(
-                  index: 3,
-                  child: ShipmentRecordLayout(i18n: i18n, shipment: shipment),
-                ),
-                if (!decisionFirst && showQuotes) ...[
-                  const SizedBox(height: 16),
-                  AppAppear(index: 4, child: quotations),
                 ],
               ],
             ),

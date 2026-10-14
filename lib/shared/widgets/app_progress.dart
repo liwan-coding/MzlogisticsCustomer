@@ -59,12 +59,11 @@ class AppStatusStepper extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 22),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(99),
-                  gradient: index <= activeIndex && !failed
-                      ? AppColors.accentGradient
-                      : null,
-                  color: index <= activeIndex && failed
-                      ? AppColors.danger
-                      : AppColors.border,
+                  color: index <= activeIndex && !failed
+                      ? AppColors.success
+                      : index <= activeIndex && failed
+                          ? AppColors.danger
+                          : AppColors.border,
                 ),
               ),
             ),
@@ -183,7 +182,7 @@ class _TimelineRow extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(99),
-                      color: event.done ? AppColors.accentFrom : AppColors.border,
+                      color: event.done ? AppColors.success : AppColors.border,
                     ),
                   ),
                 ),

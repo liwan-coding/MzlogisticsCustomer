@@ -11,6 +11,8 @@ class SplashScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.i18n;
+    final name = i18n.t('app.name');
+    final mark = name.lastIndexOf('X');
     return Scaffold(
       backgroundColor: AppColors.navyDeep,
       body: Center(
@@ -19,20 +21,35 @@ class SplashScreen extends ConsumerWidget {
           children: [
             const BrandMark(size: 64, light: true),
             const SizedBox(height: 20),
-            Text(
-              i18n.t('app.name'),
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
+            mark < 0
+                ? Text(
+                    name,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  )
+                : Text.rich(
+              TextSpan(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                ),
+                children: [
+                  TextSpan(text: name.substring(0, mark)),
+                  const TextSpan(text: 'X', style: TextStyle(color: AppColors.orange)),
+                  TextSpan(text: name.substring(mark + 1)),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               i18n.t('app.tagline'),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.navyMuted,
+                    color: AppColors.onBar,
                   ),
             ),
             const SizedBox(height: 28),

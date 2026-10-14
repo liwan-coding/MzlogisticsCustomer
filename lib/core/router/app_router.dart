@@ -121,8 +121,10 @@ List<RouteBase> customerRoutes({
                 GoRoute(
                   path: 'new',
                   parentNavigatorKey: rootNavigatorKey,
-                  pageBuilder: (context, state) =>
-                      forward(state, const CreateShipmentScreen()),
+                  pageBuilder: (context, state) => forward(
+                    state,
+                    const _WithHeader(child: CreateShipmentScreen()),
+                  ),
                 ),
                 GoRoute(
                   path: ':id',
@@ -213,7 +215,11 @@ List<RouteBase> customerRoutes({
                   parentNavigatorKey: rootNavigatorKey,
                   pageBuilder: (context, state) => forward(
                     state,
-                    TransferPendingScreen(args: TransferPendingArgs.fromExtra(state.extra)),
+                    _WithHeader(
+                      child: TransferPendingScreen(
+                        args: TransferPendingArgs.fromExtra(state.extra),
+                      ),
+                    ),
                   ),
                 ),
                 GoRoute(
@@ -223,11 +229,13 @@ List<RouteBase> customerRoutes({
                     final args = CheckoutArgs.fromExtra(state.extra);
                     return forward(
                       state,
-                      PaymentCheckoutScreen(
-                        paymentId: routeId(state),
-                        paymentLink: args.paymentLink,
-                        jobId: args.jobId,
-                        invoicePayment: args.invoicePayment,
+                      _WithHeader(
+                        child: PaymentCheckoutScreen(
+                          paymentId: routeId(state),
+                          paymentLink: args.paymentLink,
+                          jobId: args.jobId,
+                          invoicePayment: args.invoicePayment,
+                        ),
                       ),
                     );
                   },
@@ -258,19 +266,23 @@ List<RouteBase> customerRoutes({
     ),
     GoRoute(
       path: '/notifications',
-      pageBuilder: (context, state) =>
-          forward(state, const NotificationsScreen()),
+      pageBuilder: (context, state) => forward(
+        state,
+        const _WithHeader(child: NotificationsScreen()),
+      ),
     ),
     GoRoute(
       path: '/payment/success',
       pageBuilder: (context, state) => forward(
         state,
-        PaymentSuccessScreen(
+        _WithHeader(
+          child: PaymentSuccessScreen(
           paymentId: int.tryParse(
             state.uri.queryParameters['payment_id'] ?? '',
           ),
           jobId: int.tryParse(state.uri.queryParameters['job_id'] ?? ''),
           success: state.uri.queryParameters['success'] != '0',
+          ),
         ),
       ),
     ),
@@ -278,16 +290,38 @@ List<RouteBase> customerRoutes({
       path: '/payment/cancel',
       pageBuilder: (context, state) => forward(
         state,
-        PaymentCancelScreen(
-          paymentId: int.tryParse(
-            state.uri.queryParameters['payment_id'] ?? '',
+        _WithHeader(
+          child: PaymentCancelScreen(
+            paymentId: int.tryParse(
+              state.uri.queryParameters['payment_id'] ?? '',
+            ),
+            jobId: int.tryParse(state.uri.queryParameters['job_id'] ?? ''),
+            invoicePayment: state.uri.queryParameters['invoice'] == '1',
           ),
-          jobId: int.tryParse(state.uri.queryParameters['job_id'] ?? ''),
-          invoicePayment: state.uri.queryParameters['invoice'] == '1',
         ),
       ),
     ),
   ];
+}
+
+class _WithHeader extends ConsumerWidget {
+  const _WithHeader({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(notificationsProvider).maybeWhen(
+      data: (page) => page.items.where((item) => item.isUnread).length,
+      orElse: () => 0,
+    );
+    return DesktopHeaderFrame(
+      i18n: ref.i18n,
+      userName: ref.watch(authControllerProvider).user?.name ?? '',
+      unreadCount: unread,
+      child: child,
+    );
+  }
 }
 
 class _AppShell extends ConsumerWidget {

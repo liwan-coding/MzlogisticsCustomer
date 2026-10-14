@@ -41,10 +41,11 @@ class EntitySummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ColoredBox(
-            color: accent ?? AppColors.accentFrom,
-            child: const SizedBox(height: 3),
-          ),
+          if (accent != null)
+            ColoredBox(
+              color: accent!,
+              child: const SizedBox(height: 3),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(

@@ -9,12 +9,15 @@ import 'package:mz_logistics_customer_app/features/shipments/data/shipment_model
 import 'package:mz_logistics_customer_app/features/shipments/presentation/widgets/shipment_card.dart';
 
 void main() {
-  test('brand colors stay on the navy and neon palette', () {
-    expect(AppColors.ink, const Color(0xFF0E1B3D));
-    expect(AppColors.navy, const Color(0xFF155EEF));
-    expect(AppColors.accentFrom, const Color(0xFF7EE787));
-    expect(AppColors.accentTo, const Color(0xFF155EEF));
-    expect(AppColors.amber, AppColors.accentFrom);
+  test('brand colors follow the home palette', () {
+    expect(AppColors.ink, const Color(0xFF1C2430));
+    expect(AppColors.orange, const Color(0xFFF15A22));
+    expect(AppColors.surface, const Color(0xFFF7F8FB));
+    expect(AppColors.bar, const Color(0xFF101A2B));
+    expect(AppColors.navy, AppColors.orange);
+    expect(AppColors.accentFrom, AppColors.orange);
+    expect(AppColors.success, const Color(0xFF1F9D62));
+    expect(AppColors.danger, const Color(0xFFA33B32));
   });
 
   test('amount formatter includes currency', () {

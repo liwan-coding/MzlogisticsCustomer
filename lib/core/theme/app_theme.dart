@@ -16,10 +16,10 @@ class AppTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.surface,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.navy,
+        primary: AppColors.orange,
         onPrimary: AppColors.white,
-        secondary: AppColors.amber,
-        onSecondary: AppColors.onNeon,
+        secondary: AppColors.info,
+        onSecondary: AppColors.white,
         surface: AppColors.white,
         onSurface: AppColors.ink,
         error: AppColors.danger,
@@ -54,7 +54,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(radiusLg),
           side: const BorderSide(color: AppColors.border),
         ),
       ),
@@ -79,7 +79,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.orange, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
@@ -92,7 +92,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.navy,
+          backgroundColor: AppColors.orange,
           foregroundColor: AppColors.white,
           disabledBackgroundColor: AppColors.mist,
           disabledForegroundColor: AppColors.muted,
@@ -107,7 +107,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.orange,
           minimumSize: const Size(48, 50),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           side: const BorderSide(color: AppColors.border),
@@ -119,14 +119,14 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.orange,
           minimumSize: const Size(44, 44),
           textStyle: inkText.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.white,
-        indicatorColor: AppColors.amberSoft,
+        indicatorColor: AppColors.navySoft,
         elevation: 0,
         height: 72,
         surfaceTintColor: Colors.transparent,
@@ -134,26 +134,26 @@ class AppTheme {
           final selected = states.contains(WidgetState.selected);
           return inkText.labelSmall?.copyWith(
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? AppColors.navy : AppColors.muted,
+            color: selected ? AppColors.orange : AppColors.muted,
           );
         }),
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: AppColors.navy,
-        selectedIconTheme: const IconThemeData(color: AppColors.amber),
-        unselectedIconTheme: const IconThemeData(color: AppColors.navyMuted),
+        backgroundColor: AppColors.bar,
+        selectedIconTheme: const IconThemeData(color: AppColors.orange),
+        unselectedIconTheme: const IconThemeData(color: AppColors.onBar),
         selectedLabelTextStyle: inkText.labelMedium?.copyWith(
           color: AppColors.white,
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelTextStyle: inkText.labelMedium?.copyWith(
-          color: AppColors.navyMuted,
+          color: AppColors.onBar,
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.navy,
+        labelColor: AppColors.orange,
         unselectedLabelColor: AppColors.muted,
-        indicatorColor: AppColors.amber,
+        indicatorColor: AppColors.orange,
         dividerColor: AppColors.border,
         labelStyle: inkText.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         unselectedLabelStyle: inkText.labelLarge?.copyWith(fontWeight: FontWeight.w500),
@@ -172,6 +172,36 @@ class AppTheme {
         backgroundColor: AppColors.ink,
         contentTextStyle: inkText.bodyMedium?.copyWith(color: AppColors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: AppColors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 10,
+        shadowColor: const Color(0x1F1C2430),
+        menuPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        textStyle: inkText.bodyMedium?.copyWith(
+          color: AppColors.ink,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(AppColors.white),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(10),
+          shadowColor: const WidgetStatePropertyAll(Color(0x1F1C2430)),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6, horizontal: 6)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radius),
+              side: const BorderSide(color: AppColors.border),
+            ),
+          ),
+        ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.white,
@@ -192,10 +222,10 @@ class AppTheme {
         style: ButtonStyle(
           visualDensity: VisualDensity.compact,
           foregroundColor: WidgetStateProperty.resolveWith((states) {
-            return states.contains(WidgetState.selected) ? AppColors.navy : AppColors.muted;
+            return states.contains(WidgetState.selected) ? AppColors.orange : AppColors.muted;
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return states.contains(WidgetState.selected) ? AppColors.amberSoft : AppColors.white;
+            return states.contains(WidgetState.selected) ? AppColors.navySoft : AppColors.white;
           }),
         ),
       ),

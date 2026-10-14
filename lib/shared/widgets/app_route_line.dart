@@ -105,7 +105,7 @@ class AppRoutePanel extends StatelessWidget {
           Expanded(
             child: _RouteEnd(
               icon: Icons.flag_rounded,
-              iconColor: AppColors.onNeon,
+              iconColor: AppColors.orange,
               caption: toLabel,
               value: to,
               alignEnd: true,
@@ -251,7 +251,7 @@ class _RouteDot extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.accentFrom,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.onNeon, width: 1.2),
+        border: Border.all(color: AppColors.white, width: 1.2),
       ),
     );
   }

@@ -95,7 +95,10 @@ class JobCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      StatusBadge(status: status, label: i18n.status(status)),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 132),
+                        child: StatusBadge(status: status, label: i18n.status(status)),
+                      ),
                     ],
                   ),
                   if (from != null || to != null) ...[
@@ -171,17 +174,19 @@ class _FactChip extends StatelessWidget {
           Icon(
             icon,
             size: 14,
-            color: emphasize ? AppColors.onNeon : AppColors.navy,
+            color: emphasize ? AppColors.orange : AppColors.muted,
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: emphasize ? AppColors.onNeon : AppColors.ink,
-                ),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: emphasize ? AppColors.orange : AppColors.ink,
+                  ),
+            ),
           ),
         ],
       ),

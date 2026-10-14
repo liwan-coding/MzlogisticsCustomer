@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/company_contact.dart';
 import '../../../../core/i18n/i18n_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -257,6 +258,43 @@ class ProfileOrganizationCard extends StatelessWidget {
             copyable: true,
             onTap: () => copyProfileValue(context, i18n, address),
           ),
+      ],
+    );
+  }
+}
+
+class ProfileContactCard extends StatelessWidget {
+  const ProfileContactCard({super.key, required this.i18n});
+
+  final I18nBundle i18n;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsSection(
+      title: i18n.t('profile.contact'),
+      footer: i18n.t('profile.contactHint'),
+      children: [
+        _SettingRow(
+          icon: Icons.phone_outlined,
+          title: i18n.t('footer.phone'),
+          value: CompanyContact.phoneDisplay,
+          ltr: true,
+          onTap: () => CompanyContact.open(CompanyContact.phoneUri),
+        ),
+        _SettingRow(
+          icon: Icons.chat_outlined,
+          title: i18n.t('profile.whatsapp'),
+          value: CompanyContact.phoneDisplay,
+          ltr: true,
+          onTap: () => CompanyContact.open(CompanyContact.whatsappUri),
+        ),
+        _SettingRow(
+          icon: Icons.photo_camera_outlined,
+          title: i18n.t('profile.instagram'),
+          value: CompanyContact.instagramHandle,
+          ltr: true,
+          onTap: () => CompanyContact.open(CompanyContact.instagramUri),
+        ),
       ],
     );
   }

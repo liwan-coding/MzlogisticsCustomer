@@ -12,6 +12,7 @@ import '../../../shared/widgets/app_grouped_list.dart';
 import '../../../shared/widgets/app_list_card.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../data/invoice_model.dart';
 import 'invoice_payment_flow.dart';
@@ -100,7 +101,8 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
     final value = ref.watch(invoicesProvider);
     final now = DateTime.now();
 
-    return AsyncBody<PagedResult<Invoice>>(
+    return PageScrollView(
+      child: AsyncBody<PagedResult<Invoice>>(
       value: value,
       i18n: i18n,
       onRetry: () => ref.invalidate(invoicesProvider),
@@ -122,7 +124,7 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
 
         if (visible.isEmpty) {
           return ContentWidth(
-            child: ListView(
+            child: PageList(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 toolbar,
@@ -178,6 +180,7 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
         if (context.isDesktop) return ContentWidth(child: list);
         return list;
       },
+      ),
     );
   }
 }

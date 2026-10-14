@@ -11,6 +11,7 @@ import '../../../shared/widgets/authenticated_image.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/info_row.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../data/trip_model.dart';
 import 'trip_providers.dart';
@@ -42,7 +43,7 @@ class PodScreen extends ConsumerWidget {
           }
           final locale = i18n.locale.languageCode;
           return ContentWidth(
-            child: ListView(
+            child: PageList(
               children: [
                 AppAppear(
                   index: 0,

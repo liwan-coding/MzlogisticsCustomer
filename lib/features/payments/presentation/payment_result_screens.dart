@@ -96,9 +96,14 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       title: i18n.t('payment.successTitle'),
       showBack: true,
       body: ContentWidth(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: Align(
+          alignment: AlignmentDirectional.topStart,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Padding(
+          padding: const EdgeInsets.only(top: 8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -126,6 +131,8 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
                 onPressed: () => context.go('/payments'),
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),
@@ -206,9 +213,14 @@ class _PaymentCancelScreenState extends ConsumerState<PaymentCancelScreen> {
       title: i18n.t('payment.cancelTitle'),
       showBack: true,
       body: ContentWidth(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: Align(
+          alignment: AlignmentDirectional.topStart,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Padding(
+          padding: const EdgeInsets.only(top: 8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -261,6 +273,8 @@ class _PaymentCancelScreenState extends ConsumerState<PaymentCancelScreen> {
                 ),
               ],
             ],
+          ),
+            ),
           ),
         ),
       ),

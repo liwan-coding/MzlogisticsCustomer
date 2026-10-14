@@ -300,7 +300,7 @@ class _StageNodeState extends State<_StageNode> with SingleTickerProviderStateMi
     final iconColor = widget.current
         ? AppColors.white
         : widget.done
-        ? AppColors.onNeon
+        ? AppColors.white
         : AppColors.muted;
     final labelColor = widget.current
         ? AppColors.navy
@@ -365,16 +365,16 @@ class _StageNodeState extends State<_StageNode> with SingleTickerProviderStateMi
                         height: 40,
                         decoration: BoxDecoration(
                           color: widget.current
-                              ? AppColors.navy
+                              ? AppColors.orange
                               : widget.done
-                              ? AppColors.accentFrom
+                              ? AppColors.success
                               : AppColors.white,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: widget.current
                                 ? AppColors.navy
                                 : widget.done
-                                ? AppColors.accentFrom
+                                ? AppColors.success
                                 : AppColors.border,
                             width: 1.5,
                           ),

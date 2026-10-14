@@ -10,6 +10,7 @@ import '../../../shared/widgets/app_grouped_list.dart';
 import '../../../shared/widgets/app_list_card.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../data/notification_model.dart';
 import '../data/notification_repository.dart';
 import 'notification_providers.dart';
@@ -90,7 +91,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       showBack: true,
       actions: [
         TextButton(
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
           onPressed: () async {
             await ref.read(notificationRepositoryProvider).markAllRead();
             ref.invalidate(notificationsProvider);
@@ -99,7 +99,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
       ],
       body: ContentWidth(
-        padding: EdgeInsets.zero,
         child: AsyncBody<PagedResult<AppNotification>>(
           value: value,
           i18n: i18n,
@@ -121,9 +120,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             );
 
             if (visible.isEmpty) {
-              return ListView(
+              return PageList(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
                   toolbar,
                   const SizedBox(height: 24),
@@ -134,6 +132,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
             return AppGroupedListView<AppNotification>(
               header: toolbar,
+              padding: EdgeInsets.zero,
               items: visible,
               itemBuilder: (context, item) {
                 return AppListCard(

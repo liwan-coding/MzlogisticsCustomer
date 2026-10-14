@@ -14,6 +14,7 @@ import 'package:mz_logistics_customer_app/features/jobs/presentation/job_provide
 import 'package:mz_logistics_customer_app/features/notifications/data/notification_model.dart';
 import 'package:mz_logistics_customer_app/features/notifications/presentation/notification_providers.dart';
 import 'package:mz_logistics_customer_app/features/shipments/data/shipment_model.dart';
+import 'package:mz_logistics_customer_app/features/shipments/data/truck_type.dart';
 import 'package:mz_logistics_customer_app/features/shipments/presentation/shipment_providers.dart';
 import 'package:mz_logistics_customer_app/shared/models/pagination_meta.dart';
 import 'package:mz_logistics_customer_app/shared/models/user.dart';
@@ -176,6 +177,7 @@ Future<GoRouter> _pumpShell(WidgetTester tester, Size size) async {
             meta: PaginationMeta(),
           ),
         ),
+        truckTypesProvider.overrideWith((ref) async => const <TruckTypeOption>[]),
       ],
       child: MaterialApp.router(
         locale: _bundle.locale,

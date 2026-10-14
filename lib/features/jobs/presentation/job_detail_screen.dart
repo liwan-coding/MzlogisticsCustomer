@@ -15,6 +15,7 @@ import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/entity_summary_card.dart';
 import '../../../shared/widgets/info_row.dart';
 import '../../../shared/widgets/page_scaffold.dart';
+import '../../../shared/widgets/page_scroll.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../payments/presentation/widgets/payment_terms_readout.dart';
 import '../../invoices/presentation/invoice_payment_flow.dart';
@@ -59,10 +60,11 @@ class JobDetailScreen extends ConsumerWidget {
           final to = job.shipment?.deliveryCity ?? job.shipment?.deliveryAddress;
 
           return ContentWidth(
-            child: ListView(
+            child: PageList(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                AppAppear(
+                DesktopPair(
+                  primary: AppAppear(
                   index: 0,
                   child: EntitySummaryCard(
                     title: title,
@@ -104,7 +106,8 @@ class JobDetailScreen extends ConsumerWidget {
                         : null,
                   ),
                 ),
-                const SizedBox(height: 16),
+                  secondary: Column(
+                    children: [
                 AppAppear(
                   index: 1,
                   child: SectionCard(
@@ -131,6 +134,9 @@ class JobDetailScreen extends ConsumerWidget {
                       currentId: _jobStep(job.status),
                       failed: job.status == 'cancelled',
                     ),
+                  ),
+                ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),

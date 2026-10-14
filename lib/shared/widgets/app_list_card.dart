@@ -81,7 +81,10 @@ class AppListCard extends StatelessWidget {
             ),
             if (trailing != null) ...[
               const SizedBox(width: 8),
-              trailing!,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 132),
+                child: trailing!,
+              ),
             ],
             if (chevron) ...[
               const SizedBox(width: 4),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/i18n/i18n_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_dropdown.dart';
 import '../data/payment_method_model.dart';
 import 'payment_providers.dart';
 
@@ -37,20 +38,17 @@ Future<String?> showSelectPaymentMethodDialog({
               children: [
                 Text(i18n.t(confirmHintKey), style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 16),
-                Text(i18n.t('quotation.paymentMethod')),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: selected,
-                  items: [
+                AppDropdown<String>(
+                  label: i18n.t('quotation.paymentMethod'),
+                  value: selected,
+                  options: [
                     for (final method in methods)
-                      DropdownMenuItem(
+                      AppDropdownOption(
                         value: method.code,
-                        child: Text(_methodLabel(i18n, method)),
+                        label: _methodLabel(i18n, method),
                       ),
                   ],
-                  onChanged: (value) {
-                    if (value != null) setLocal(() => selected = value);
-                  },
+                  onChanged: (value) => setLocal(() => selected = value),
                 ),
               ],
             );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
+import 'app_appear.dart';
+import 'page_scroll.dart';
 
 class AppGroupedListView<T> extends StatelessWidget {
   const AppGroupedListView({
@@ -20,9 +21,10 @@ class AppGroupedListView<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final list = ListView(
+    return PageList(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: padding,
+      onRefresh: onRefresh,
       children: [
         if (header != null) ...[
           header!,
@@ -34,19 +36,12 @@ class AppGroupedListView<T> extends StatelessWidget {
             children: [
               for (var index = 0; index < items.length; index++) ...[
                 if (index > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-                itemBuilder(context, items[index]),
+                AppAppear(index: index, child: itemBuilder(context, items[index])),
               ],
             ],
           ),
         ),
       ],
-    );
-
-    if (onRefresh == null) return list;
-    return RefreshIndicator(
-      color: AppColors.navy,
-      onRefresh: onRefresh!,
-      child: list,
     );
   }
 }
@@ -65,8 +60,9 @@ class AppTableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = ListView(
+    return PageList(
       physics: const AlwaysScrollableScrollPhysics(),
+      onRefresh: onRefresh,
       children: [
         if (header != null) ...[
           header!,
@@ -77,10 +73,6 @@ class AppTableCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const ColoredBox(
-                color: AppColors.accentFrom,
-                child: SizedBox(height: 3),
-              ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: child,
@@ -89,13 +81,6 @@ class AppTableCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-
-    if (onRefresh == null) return body;
-    return RefreshIndicator(
-      color: AppColors.navy,
-      onRefresh: onRefresh!,
-      child: body,
     );
   }
 }
