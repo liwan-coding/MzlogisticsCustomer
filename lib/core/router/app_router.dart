@@ -123,7 +123,11 @@ List<RouteBase> customerRoutes({
                   parentNavigatorKey: rootNavigatorKey,
                   pageBuilder: (context, state) => forward(
                     state,
-                    const _WithHeader(child: CreateShipmentScreen()),
+                    _WithHeader(
+                      child: CreateShipmentScreen(
+                        initialTruckType: state.uri.queryParameters['truck'],
+                      ),
+                    ),
                   ),
                 ),
                 GoRoute(
@@ -266,10 +270,8 @@ List<RouteBase> customerRoutes({
     ),
     GoRoute(
       path: '/notifications',
-      pageBuilder: (context, state) => forward(
-        state,
-        const _WithHeader(child: NotificationsScreen()),
-      ),
+      pageBuilder: (context, state) =>
+          forward(state, const _WithHeader(child: NotificationsScreen())),
     ),
     GoRoute(
       path: '/payment/success',
@@ -277,11 +279,11 @@ List<RouteBase> customerRoutes({
         state,
         _WithHeader(
           child: PaymentSuccessScreen(
-          paymentId: int.tryParse(
-            state.uri.queryParameters['payment_id'] ?? '',
-          ),
-          jobId: int.tryParse(state.uri.queryParameters['job_id'] ?? ''),
-          success: state.uri.queryParameters['success'] != '0',
+            paymentId: int.tryParse(
+              state.uri.queryParameters['payment_id'] ?? '',
+            ),
+            jobId: int.tryParse(state.uri.queryParameters['job_id'] ?? ''),
+            success: state.uri.queryParameters['success'] != '0',
           ),
         ),
       ),
@@ -311,10 +313,12 @@ class _WithHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unread = ref.watch(notificationsProvider).maybeWhen(
-      data: (page) => page.items.where((item) => item.isUnread).length,
-      orElse: () => 0,
-    );
+    final unread = ref
+        .watch(notificationsProvider)
+        .maybeWhen(
+          data: (page) => page.items.where((item) => item.isUnread).length,
+          orElse: () => 0,
+        );
     return DesktopHeaderFrame(
       i18n: ref.i18n,
       userName: ref.watch(authControllerProvider).user?.name ?? '',

@@ -34,7 +34,7 @@ Future<String?> showSelectPaymentMethodDialog({
           builder: (context, setLocal) {
             return Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(i18n.t(confirmHintKey), style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 16),

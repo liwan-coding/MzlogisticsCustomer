@@ -11,14 +11,23 @@ class TripRepository {
 
   final ApiClient _api;
 
-  Future<PagedResult<Trip>> list({int page = 1}) async {
-    final envelope = await _api.get('/trips', query: {'page': page});
+  Future<PagedResult<Trip>> list({
+    int page = 1,
+    String? status,
+    int? perPage,
+  }) async {
+    final query = <String, dynamic>{'page': page};
+    if (status != null && status.isNotEmpty) query['status'] = status;
+    if (perPage != null) query['per_page'] = perPage;
+    final envelope = await _api.get('/trips', query: query);
     return PagedResult(
       items: envelope.list
           .whereType<Map>()
           .map((item) => Trip.fromJson(asMap(item)))
           .toList(),
-      meta: PaginationMeta.fromJson(envelope.meta.isEmpty ? envelope.map : envelope.meta),
+      meta: PaginationMeta.fromJson(
+        envelope.meta.isEmpty ? envelope.map : envelope.meta,
+      ),
     );
   }
 

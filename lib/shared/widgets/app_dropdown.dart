@@ -36,86 +36,112 @@ class AppDropdown<T> extends StatefulWidget {
 
 class _AppDropdownState<T> extends State<AppDropdown<T>> {
   var _open = false;
+  final _fieldKey = GlobalKey();
+  double _menuWidth = 0;
+
+  /// Width is read after layout. [AlertDialog] sizes its content with
+  /// [IntrinsicWidth], and [LayoutBuilder] cannot answer that measurement.
+  double? get _fieldWidth {
+    final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize || box.size.width <= 0) return null;
+    return box.size.width;
+  }
+
+  void _scheduleMenuWidthSync() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final width = _fieldWidth;
+      if (width == null || (width - _menuWidth).abs() < 0.5) return;
+      setState(() => _menuWidth = width);
+    });
+  }
+
+  void _toggle(MenuController controller) {
+    final width = _fieldWidth;
+    final widthChanged = width != null && (width - _menuWidth).abs() >= 0.5;
+    if (widthChanged) setState(() => _menuWidth = width);
+    if (controller.isOpen) {
+      controller.close();
+      return;
+    }
+    if (widthChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !controller.isOpen) controller.open();
+      });
+      return;
+    }
+    controller.open();
+  }
 
   @override
   Widget build(BuildContext context) {
+    _scheduleMenuWidthSync();
     final selected = _selected;
     final canOpen = widget.enabled && widget.onChanged != null && widget.options.isNotEmpty;
     final text = Theme.of(context).textTheme;
+    final menuWidth = _menuWidth > 0 ? _menuWidth : null;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        return MenuAnchor(
-          alignmentOffset: const Offset(0, 8),
-          consumeOutsideTap: true,
-          onOpen: () {
-            if (!_open) setState(() => _open = true);
-          },
-          onClose: () {
-            if (_open) setState(() => _open = false);
-          },
-          style: MenuStyle(
-            backgroundColor: const WidgetStatePropertyAll(AppColors.white),
-            surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-            elevation: const WidgetStatePropertyAll(10),
-            shadowColor: const WidgetStatePropertyAll(Color(0x1F1C2430)),
-            padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6, horizontal: 6)),
-            minimumSize: WidgetStatePropertyAll(Size(width, 0)),
-            maximumSize: WidgetStatePropertyAll(Size(width, 320)),
-            shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radius),
-                side: const BorderSide(color: AppColors.border),
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      consumeOutsideTap: true,
+      onOpen: () {
+        if (!_open) setState(() => _open = true);
+      },
+      onClose: () {
+        if (_open) setState(() => _open = false);
+      },
+      style: MenuStyle(
+        backgroundColor: const WidgetStatePropertyAll(AppColors.white),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(10),
+        shadowColor: const WidgetStatePropertyAll(Color(0x1F1C2430)),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6, horizontal: 6)),
+        minimumSize: WidgetStatePropertyAll(Size(menuWidth ?? 0, 0)),
+        maximumSize: WidgetStatePropertyAll(Size(menuWidth ?? double.infinity, 320)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radius),
+            side: const BorderSide(color: AppColors.border),
+          ),
+        ),
+      ),
+      menuChildren: [
+        for (final option in widget.options)
+          _OptionButton(
+            label: option.label,
+            selected: option.value == widget.value,
+            width: menuWidth ?? 0,
+            onPressed: canOpen ? () => widget.onChanged!(option.value) : null,
+          ),
+      ],
+      builder: (context, controller, _) {
+        return InkWell(
+          key: _fieldKey,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          onTap: canOpen ? () => _toggle(controller) : null,
+          child: InputDecorator(
+            isFocused: _open,
+            isEmpty: selected == null,
+            decoration: InputDecoration(
+              labelText: widget.label,
+              hintText: widget.hint,
+              errorText: widget.errorText,
+              enabled: canOpen,
+              suffixIcon: Icon(
+                _open ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                color: canOpen ? AppColors.ink : AppColors.muted,
+              ),
+            ),
+            child: Text(
+              selected?.label ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.bodyLarge?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          menuChildren: [
-            for (final option in widget.options)
-              _OptionButton(
-                label: option.label,
-                selected: option.value == widget.value,
-                width: width,
-                onPressed: canOpen ? () => widget.onChanged!(option.value) : null,
-              ),
-          ],
-          builder: (context, controller, _) {
-            return InkWell(
-              borderRadius: BorderRadius.circular(AppTheme.radius),
-              onTap: canOpen
-                  ? () {
-                      if (controller.isOpen) {
-                        controller.close();
-                      } else {
-                        controller.open();
-                      }
-                    }
-                  : null,
-              child: InputDecorator(
-                isFocused: _open,
-                isEmpty: selected == null,
-                decoration: InputDecoration(
-                  labelText: widget.label,
-                  hintText: widget.hint,
-                  errorText: widget.errorText,
-                  enabled: canOpen,
-                  suffixIcon: Icon(
-                    _open ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    color: canOpen ? AppColors.ink : AppColors.muted,
-                  ),
-                ),
-                child: Text(
-                  selected?.label ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodyLarge?.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            );
-          },
         );
       },
     );
@@ -155,7 +181,7 @@ class _OptionButton extends StatelessWidget {
         }),
         overlayColor: const WidgetStatePropertyAll(Color(0x14F15A22)),
         padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-        minimumSize: WidgetStatePropertyAll(Size(width - 12, 44)),
+        minimumSize: WidgetStatePropertyAll(Size(width > 12 ? width - 12 : 0, 44)),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
         ),

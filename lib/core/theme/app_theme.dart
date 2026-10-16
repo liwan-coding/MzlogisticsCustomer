@@ -6,6 +6,22 @@ import 'app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Loads IBM Plex before the first frame.
+  ///
+  /// Buttons animate label color without a relayout. If a face arrives during
+  /// that animation, the paragraph is rebuilt while painting and Flutter throws
+  /// when the measured size no longer matches.
+  static Future<void> preloadFonts() async {
+    GoogleFonts.ibmPlexSansArabicTextTheme();
+    GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.w600);
+    GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.w700);
+    try {
+      await GoogleFonts.pendingFonts();
+    } on Object {
+      // The font host can be unreachable. Text keeps the platform fallback.
+    }
+  }
+
   static const double radius = 12;
   static const double radiusSm = 8;
   static const double radiusLg = 16;

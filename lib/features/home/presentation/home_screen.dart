@@ -18,6 +18,7 @@ import '../../shipments/data/truck_type.dart';
 import '../../shipments/presentation/shipment_providers.dart';
 import '../data/dashboard_model.dart';
 import 'home_footer.dart';
+import 'home_live_trip.dart';
 import 'home_providers.dart';
 
 const _heroImage = 'assets/images/home backround.png';
@@ -31,7 +32,12 @@ const _canvas = Color(0xFFF7F8FB);
 double _sectionGap(bool wide) => wide ? 48 : 32;
 
 EdgeInsets _sectionPadding(bool wide) {
-  return EdgeInsets.fromLTRB(wide ? 40 : 16, _sectionGap(wide), wide ? 40 : 16, 0);
+  return EdgeInsets.fromLTRB(
+    wide ? 40 : 16,
+    _sectionGap(wide),
+    wide ? 40 : 16,
+    0,
+  );
 }
 
 BoxDecoration _homePanel() {
@@ -40,7 +46,11 @@ BoxDecoration _homePanel() {
     borderRadius: BorderRadius.circular(28),
     border: Border.all(color: _line),
     boxShadow: const [
-      BoxShadow(color: Color(0x101C2430), blurRadius: 28, offset: Offset(0, 14)),
+      BoxShadow(
+        color: Color(0x101C2430),
+        blurRadius: 28,
+        offset: Offset(0, 14),
+      ),
     ],
   );
 }
@@ -67,10 +77,14 @@ class HomeScreen extends ConsumerWidget {
               ref.invalidate(dashboardProvider);
               ref.invalidate(shipmentsProvider);
               ref.invalidate(truckTypesProvider);
+              ref.invalidate(featuredInTransitTripProvider);
               await Future.wait([
                 ref.read(dashboardProvider.future),
                 ref.read(shipmentsProvider.future),
                 ref.read(truckTypesProvider.future),
+                ref
+                    .read(featuredInTransitTripProvider.future)
+                    .catchError((_) => null),
               ]);
             },
             child: shipments.when(
@@ -128,13 +142,23 @@ class _HomeBody extends StatelessWidget {
           to: _city(featured?.deliveryCity, featured?.deliveryAddress),
           rtl: Directionality.of(context) == TextDirection.rtl,
         ),
-        _ScrollReveal(child: _FleetTypes(i18n: i18n, wide: wide)),
-        _ScrollReveal(child: _QuickAction(i18n: i18n, wide: wide)),
-        _ScrollReveal(child: _Glance(i18n: i18n, summary: summary, wide: wide)),
+        _ScrollReveal(
+          child: HomeLiveTrip(i18n: i18n, summary: summary, wide: wide),
+        ),
+        _ScrollReveal(
+          child: _FleetTypes(i18n: i18n, wide: wide),
+        ),
+        _ScrollReveal(
+          child: _QuickAction(i18n: i18n, wide: wide),
+        ),
+        _ScrollReveal(
+          child: _Glance(i18n: i18n, summary: summary, wide: wide),
+        ),
         _ScrollReveal(
           child: shipmentsError != null
               ? Padding(
-                  padding: _sectionPadding(wide).copyWith(bottom: _sectionGap(wide)),
+                  padding: _sectionPadding(wide)
+                      .copyWith(bottom: _sectionGap(wide)),
                   child: ErrorState(
                     i18n: i18n,
                     error: shipmentsError!,
@@ -161,7 +185,11 @@ class _RevealBus extends ChangeNotifier {
 }
 
 class _RevealScope extends InheritedWidget {
-  const _RevealScope({required this.bus, required this.scroll, required super.child});
+  const _RevealScope({
+    required this.bus,
+    required this.scroll,
+    required super.child,
+  });
 
   final _RevealBus bus;
   final ScrollController scroll;
@@ -227,7 +255,8 @@ class _ScrollReveal extends StatefulWidget {
   State<_ScrollReveal> createState() => _ScrollRevealState();
 }
 
-class _ScrollRevealState extends State<_ScrollReveal> with SingleTickerProviderStateMixin {
+class _ScrollRevealState extends State<_ScrollReveal>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _enter;
   _RevealBus? _bus;
   var _started = false;
@@ -235,7 +264,10 @@ class _ScrollRevealState extends State<_ScrollReveal> with SingleTickerProviderS
   @override
   void initState() {
     super.initState();
-    _enter = AnimationController(vsync: this, duration: const Duration(milliseconds: 860));
+    _enter = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 860),
+    );
   }
 
   @override
@@ -357,117 +389,123 @@ class _Hero extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ConstrainedBox(
-      constraints: BoxConstraints(minHeight: wide ? 520 : 400),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipPath(
-              clipper: const HeroEdgeClipper(),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _HeroMotion(
-                    parallax: true,
-                    child: Image.asset(
-                      _heroImage,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.centerRight,
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment(0, -0.2),
-                        radius: 0.9,
-                        colors: [
-                          Color(0xC4102033),
-                          Color(0x88102033),
-                          Color(0x00102033),
-                        ],
-                        stops: [0.15, 0.48, 0.82],
+        constraints: BoxConstraints(minHeight: wide ? 520 : 400),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipPath(
+                clipper: const HeroEdgeClipper(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _HeroMotion(
+                      parallax: true,
+                      child: Image.asset(
+                        _heroImage,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerRight,
                       ),
                     ),
-                  ),
-                ],
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(0, -0.2),
+                          radius: 0.9,
+                          colors: [
+                            Color(0xC4102033),
+                            Color(0x88102033),
+                            Color(0x00102033),
+                          ],
+                          stops: [0.15, 0.48, 0.82],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 56 : 20, wide ? 118 : 24, wide ? 56 : 20, wide ? 120 : 88),
-              child: _HeroMotion(
-                child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: 1,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        i18n.t('home.eyebrow'),
-                        textAlign: TextAlign.center,
-                        style: text.labelMedium?.copyWith(
-                          color: const Color(0xFFE8EEF6),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: rtl ? 0 : 0.6,
-                        ),
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  wide ? 56 : 20,
+                  wide ? 118 : 24,
+                  wide ? 56 : 20,
+                  wide ? 120 : 88,
+                ),
+                child: _HeroMotion(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    heightFactor: 1,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            i18n.t('home.eyebrow'),
+                            textAlign: TextAlign.center,
+                            style: text.labelMedium?.copyWith(
+                              color: const Color(0xFFE8EEF6),
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: rtl ? 0 : 0.6,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            i18n.t('home.heroLead'),
+                            textAlign: TextAlign.center,
+                            style: text.displaySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              height: 1.05,
+                              fontSize: wide ? 72 : 44,
+                            ),
+                          ),
+                          Text(
+                            i18n.t('home.heroAccent'),
+                            textAlign: TextAlign.center,
+                            style: text.displaySmall?.copyWith(
+                              color: _orange,
+                              fontWeight: FontWeight.w700,
+                              height: 1.05,
+                              fontSize: wide ? 72 : 44,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            i18n.t('home.heroBody'),
+                            textAlign: TextAlign.center,
+                            style: text.bodyLarge?.copyWith(
+                              color: const Color(0xFFE4EAF2),
+                              height: 1.45,
+                              fontSize: wide ? 20 : 17,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          _OrangeButton(
+                            label: i18n.t('home.newShipment'),
+                            icon: Icons.add,
+                            pulse: true,
+                            large: wide,
+                            expanded: !wide,
+                            onPressed: () => context.push('/shipments/new'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      Text(
-                        i18n.t('home.heroLead'),
-                        textAlign: TextAlign.center,
-                        style: text.displaySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          fontSize: wide ? 72 : 44,
-                        ),
-                      ),
-                      Text(
-                        i18n.t('home.heroAccent'),
-                        textAlign: TextAlign.center,
-                        style: text.displaySmall?.copyWith(
-                          color: _orange,
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          fontSize: wide ? 72 : 44,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        i18n.t('home.heroBody'),
-                        textAlign: TextAlign.center,
-                        style: text.bodyLarge?.copyWith(
-                          color: const Color(0xFFE4EAF2),
-                          height: 1.45,
-                          fontSize: wide ? 20 : 17,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      _OrangeButton(
-                        label: i18n.t('home.newShipment'),
-                        icon: Icons.add,
-                        pulse: true,
-                        large: wide,
-                        onPressed: () => context.push('/shipments/new'),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _EdgeRoad(from: from, to: to, rtl: rtl),
               ),
             ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: _EdgeRoad(from: from, to: to, rtl: rtl),
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -486,13 +524,17 @@ class _EdgeRoad extends StatefulWidget {
   State<_EdgeRoad> createState() => _EdgeRoadState();
 }
 
-class _EdgeRoadState extends State<_EdgeRoad> with SingleTickerProviderStateMixin {
+class _EdgeRoadState extends State<_EdgeRoad>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _travel;
 
   @override
   void initState() {
     super.initState();
-    _travel = AnimationController(vsync: this, duration: const Duration(milliseconds: 14000));
+    _travel = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 14000),
+    );
   }
 
   @override
@@ -540,7 +582,11 @@ class _EdgeRoadState extends State<_EdgeRoad> with SingleTickerProviderStateMixi
 }
 
 class _EdgeRoadPainter extends CustomPainter {
-  const _EdgeRoadPainter({required this.progress, required this.road, required this.showPins});
+  const _EdgeRoadPainter({
+    required this.progress,
+    required this.road,
+    required this.showPins,
+  });
 
   final double progress;
   final Path road;
@@ -578,7 +624,10 @@ class _EdgeRoadPainter extends CustomPainter {
 
     if (showPins) {
       _paintPin(canvas, metric.getTangentForOffset(0)!.position);
-      _paintPin(canvas, metric.getTangentForOffset(math.max(0, metric.length - 0.4))!.position);
+      _paintPin(
+        canvas,
+        metric.getTangentForOffset(math.max(0, metric.length - 0.4))!.position,
+      );
     }
 
     final fadeIn = (progress / 0.07).clamp(0.0, 1.0).toDouble();
@@ -593,10 +642,16 @@ class _EdgeRoadPainter extends CustomPainter {
     final distance = (length * t.clamp(0.0, 1.0)).clamp(0.0, limit).toDouble();
     final center = metric.getTangentForOffset(distance)!.position;
     const span = 22.0;
-    final back = metric.getTangentForOffset((distance - span).clamp(0.0, limit).toDouble())!.position;
-    final front = metric.getTangentForOffset((distance + span).clamp(0.0, limit).toDouble())!.position;
+    final back = metric
+        .getTangentForOffset((distance - span).clamp(0.0, limit).toDouble())!
+        .position;
+    final front = metric
+        .getTangentForOffset((distance + span).clamp(0.0, limit).toDouble())!
+        .position;
     final delta = front - back;
-    final angle = delta.distance < 0.5 ? metric.getTangentForOffset(distance)!.angle : math.atan2(delta.dy, delta.dx);
+    final angle = delta.distance < 0.5
+        ? metric.getTangentForOffset(distance)!.angle
+        : math.atan2(delta.dy, delta.dx);
     return (center, angle);
   }
 
@@ -612,7 +667,12 @@ class _EdgeRoadPainter extends CustomPainter {
     canvas.drawCircle(point, 4.4, Paint()..color = _orange);
   }
 
-  void _paintTruck(Canvas canvas, Offset position, double angle, double opacity) {
+  void _paintTruck(
+    Canvas canvas,
+    Offset position,
+    double angle,
+    double opacity,
+  ) {
     if (opacity <= 0) return;
     Color tone(Color color) => color.withValues(alpha: color.a * opacity);
     canvas.save();
@@ -631,11 +691,17 @@ class _EdgeRoadPainter extends CustomPainter {
     final glass = Paint()..color = tone(const Color(0xFF243040));
     final chassis = Paint()..color = tone(const Color(0xFF1C2430));
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTRB(-42, -28, 4, -10), const Radius.circular(2.4)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTRB(-42, -28, 4, -10),
+        const Radius.circular(2.4),
+      ),
       body,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTRB(-40, -18, 2, -15.4), const Radius.circular(1)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTRB(-40, -18, 2, -15.4),
+        const Radius.circular(1),
+      ),
       accent,
     );
     canvas.drawRRect(
@@ -649,7 +715,10 @@ class _EdgeRoadPainter extends CustomPainter {
       body,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTRB(18, -22, 26, -15), const Radius.circular(1.6)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTRB(18, -22, 26, -15),
+        const Radius.circular(1.6),
+      ),
       glass,
     );
     canvas.drawRect(const Rect.fromLTRB(-40, -10, 26, -7.4), chassis);
@@ -666,7 +735,9 @@ class _EdgeRoadPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _EdgeRoadPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.road != road || oldDelegate.showPins != showPins;
+    return oldDelegate.progress != progress ||
+        oldDelegate.road != road ||
+        oldDelegate.showPins != showPins;
   }
 }
 
@@ -694,12 +765,30 @@ class _FleetTypes extends ConsumerWidget {
         ),
       ),
       data: (items) {
-        final visible = items.where((type) => type.displayName(i18n.locale.languageCode).isNotEmpty).toList();
+        final visible = items
+            .where(
+              (type) => type.displayName(i18n.locale.languageCode).isNotEmpty,
+            )
+            .toList();
         if (visible.isEmpty) return const SizedBox.shrink();
         return _FleetFrame(
           wide: wide,
           title: i18n.t('home.fleetTitle'),
-          child: _FleetStrip(types: visible, locale: i18n.locale.languageCode, wide: wide),
+          hint: i18n.t('home.fleetHint'),
+          child: _FleetStrip(
+            types: visible,
+            locale: i18n.locale.languageCode,
+            wide: wide,
+            requestLabel: (name) => i18n.t('home.fleetRequest', {'type': name}),
+            onSelect: (type) {
+              context.push(
+                Uri(
+                  path: '/shipments/new',
+                  queryParameters: {'truck': type.code},
+                ).toString(),
+              );
+            },
+          ),
         );
       },
     );
@@ -707,10 +796,16 @@ class _FleetTypes extends ConsumerWidget {
 }
 
 class _FleetFrame extends StatelessWidget {
-  const _FleetFrame({required this.wide, required this.title, required this.child});
+  const _FleetFrame({
+    required this.wide,
+    required this.title,
+    required this.child,
+    this.hint,
+  });
 
   final bool wide;
   final String title;
+  final String? hint;
   final Widget child;
 
   @override
@@ -727,11 +822,18 @@ class _FleetFrame extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: _ink,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall
+                    ?.copyWith(color: _ink, fontWeight: FontWeight.w700),
               ),
+              if (hint != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  hint!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: _muted, height: 1.4),
+                ),
+              ],
               const SizedBox(height: 16),
               child,
             ],
@@ -743,23 +845,35 @@ class _FleetFrame extends StatelessWidget {
 }
 
 class _FleetStrip extends StatefulWidget {
-  const _FleetStrip({required this.types, required this.locale, required this.wide});
+  const _FleetStrip({
+    required this.types,
+    required this.locale,
+    required this.wide,
+    required this.onSelect,
+    required this.requestLabel,
+  });
 
   final List<TruckTypeOption> types;
   final String locale;
   final bool wide;
+  final ValueChanged<TruckTypeOption> onSelect;
+  final String Function(String name) requestLabel;
 
   @override
   State<_FleetStrip> createState() => _FleetStripState();
 }
 
-class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderStateMixin {
+class _FleetStripState extends State<_FleetStrip>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _drift;
 
   @override
   void initState() {
     super.initState();
-    _drift = AnimationController(vsync: this, duration: const Duration(milliseconds: 3600));
+    _drift = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3600),
+    );
   }
 
   @override
@@ -786,13 +900,21 @@ class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderState
     if (!widget.wide) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final viewport = constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
+          final viewport = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : 320.0;
           const gap = 8.0;
           final more = widget.types.length > 4;
           const peek = 30.0;
           final reserved = more ? gap + peek : 0.0;
           final size = ((viewport - gap * 3 - reserved) / 4).clamp(52.0, 88.0);
-          return _strip(size: size, small: size, gap: gap, labelHeight: 40, scroll: true);
+          return _strip(
+            size: size,
+            small: size,
+            gap: gap,
+            labelHeight: 40,
+            scroll: true,
+          );
         },
       );
     }
@@ -827,7 +949,9 @@ class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderState
             final phase = (index * 0.17) % 1;
             final travel = (_drift.value + phase) % 1;
             final bob = (math.sin(travel * math.pi * 2) + 1) / 2;
-            final lift = MediaQuery.disableAnimationsOf(context) ? 0.0 : -bob * (prominent ? 8 : 5);
+            final lift = MediaQuery.disableAnimationsOf(context)
+                ? 0.0
+                : -bob * (prominent ? 8 : 5);
             final name = type.displayName(widget.locale);
             final itemWidth = circle + (widget.wide ? 12 : 0);
             return SizedBox(
@@ -837,28 +961,45 @@ class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderState
                 child: Transform.translate(
                   offset: Offset(0, lift),
                   child: Semantics(
-                    label: name,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _FleetCircle(type: type, size: circle, prominent: prominent),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: itemWidth,
-                          height: labelHeight,
-                          child: Text(
-                            bidiIsolate(name),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: _ink,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
-                            ),
+                    button: true,
+                    label: widget.requestLabel(name),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        onTap: () => widget.onSelect(type),
+                        mouseCursor: SystemMouseCursors.click,
+                        borderRadius: BorderRadius.circular(24),
+                        focusColor: const Color(0x33F15A22),
+                        child: ExcludeSemantics(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _FleetCircle(
+                                type: type,
+                                size: circle,
+                                prominent: prominent,
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: itemWidth,
+                                height: labelHeight,
+                                child: Text(
+                                  bidiIsolate(name),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.labelLarge
+                                      ?.copyWith(
+                                        color: _ink,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.2,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -873,10 +1014,11 @@ class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderState
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var index = 0; index < widget.types.length; index++) ...[
-                      if (index > 0) SizedBox(width: gap),
-                      mark(index),
-                    ],
+                    for (
+                      var index = 0;
+                      index < widget.types.length;
+                      index++
+                    ) ...[if (index > 0) SizedBox(width: gap), mark(index)],
                   ],
                 ),
               ),
@@ -898,7 +1040,11 @@ class _FleetStripState extends State<_FleetStrip> with SingleTickerProviderState
 }
 
 class _FleetCircle extends StatelessWidget {
-  const _FleetCircle({required this.type, required this.size, required this.prominent});
+  const _FleetCircle({
+    required this.type,
+    required this.size,
+    required this.prominent,
+  });
 
   final TruckTypeOption type;
   final double size;
@@ -911,7 +1057,10 @@ class _FleetCircle extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: prominent ? _orange : const Color(0xFFD5D8E0), width: prominent ? 2.5 : 3),
+        border: Border.all(
+          color: prominent ? _orange : const Color(0xFFD5D8E0),
+          width: prominent ? 2.5 : 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0x1F1C2430),
@@ -974,7 +1123,10 @@ class _FleetSkeleton extends StatelessWidget {
         itemBuilder: (context, index) => Container(
           width: wide && index.isOdd ? 74 : circle,
           height: wide && index.isOdd ? 74 : circle,
-          decoration: const BoxDecoration(color: Color(0xFFE7E9EF), shape: BoxShape.circle),
+          decoration: const BoxDecoration(
+            color: Color(0xFFE7E9EF),
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );
@@ -982,7 +1134,12 @@ class _FleetSkeleton extends StatelessWidget {
 }
 
 class _JourneyStep {
-  const _JourneyStep({required this.title, required this.body, required this.icon, this.accent = false});
+  const _JourneyStep({
+    required this.title,
+    required this.body,
+    required this.icon,
+    this.accent = false,
+  });
 
   final String title;
   final String body;
@@ -1039,23 +1196,37 @@ class _QuickAction extends StatelessWidget {
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: _line),
               boxShadow: const [
-                BoxShadow(color: Color(0x101C2430), blurRadius: 28, offset: Offset(0, 14)),
+                BoxShadow(
+                  color: Color(0x101C2430),
+                  blurRadius: 28,
+                  offset: Offset(0, 14),
+                ),
               ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: Stack(
                 children: [
-                  const Positioned.fill(child: CustomPaint(painter: _QuickWash())),
+                  const Positioned.fill(
+                    child: CustomPaint(painter: _QuickWash()),
+                  ),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(wide ? 32 : 18, wide ? 26 : 18, wide ? 28 : 18, wide ? 26 : 18),
+                    padding: EdgeInsets.fromLTRB(
+                      wide ? 32 : 18,
+                      wide ? 26 : 18,
+                      wide ? 28 : 18,
+                      wide ? 26 : 18,
+                    ),
                     child: wide
                         ? Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Expanded(flex: 4, child: intro),
                               const SizedBox(width: 12),
-                              Expanded(flex: 7, child: _QuickJourney(steps: steps)),
+                              Expanded(
+                                flex: 7,
+                                child: _QuickJourney(steps: steps),
+                              ),
                             ],
                           )
                         : Column(
@@ -1084,13 +1255,23 @@ class _QuickWash extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final lower = Path()
       ..moveTo(size.width * 0.46, size.height)
-      ..quadraticBezierTo(size.width * 0.68, size.height * 0.18, size.width, size.height * 0.22)
+      ..quadraticBezierTo(
+        size.width * 0.68,
+        size.height * 0.18,
+        size.width,
+        size.height * 0.22,
+      )
       ..lineTo(size.width, size.height)
       ..close();
     canvas.drawPath(lower, Paint()..color = const Color(0xFFF3F6FA));
     final upper = Path()
       ..moveTo(size.width * 0.58, 0)
-      ..quadraticBezierTo(size.width * 0.78, size.height * 0.62, size.width, size.height * 0.28)
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.62,
+        size.width,
+        size.height * 0.28,
+      )
       ..lineTo(size.width, 0)
       ..close();
     canvas.drawPath(upper, Paint()..color = const Color(0xFFF7F9FC));
@@ -1101,7 +1282,11 @@ class _QuickWash extends CustomPainter {
 }
 
 class _QuickIntro extends StatelessWidget {
-  const _QuickIntro({required this.i18n, required this.onPressed, required this.expanded});
+  const _QuickIntro({
+    required this.i18n,
+    required this.onPressed,
+    required this.expanded,
+  });
 
   final I18nBundle i18n;
   final VoidCallback onPressed;
@@ -1119,7 +1304,10 @@ class _QuickIntro extends StatelessWidget {
             Container(
               width: 3,
               height: 16,
-              decoration: BoxDecoration(color: _orange, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: _orange,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(width: 8),
             Text(
@@ -1135,7 +1323,11 @@ class _QuickIntro extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           i18n.t('home.quickTitle'),
-          style: text.headlineSmall?.copyWith(color: _ink, fontWeight: FontWeight.w800, height: 1.15),
+          style: text.headlineSmall?.copyWith(
+            color: _ink,
+            fontWeight: FontWeight.w800,
+            height: 1.15,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -1164,13 +1356,17 @@ class _QuickJourney extends StatefulWidget {
   State<_QuickJourney> createState() => _QuickJourneyState();
 }
 
-class _QuickJourneyState extends State<_QuickJourney> with SingleTickerProviderStateMixin {
+class _QuickJourneyState extends State<_QuickJourney>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ride;
 
   @override
   void initState() {
     super.initState();
-    _ride = AnimationController(vsync: this, duration: const Duration(milliseconds: 11000));
+    _ride = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 11000),
+    );
   }
 
   @override
@@ -1197,7 +1393,8 @@ class _QuickJourneyState extends State<_QuickJourney> with SingleTickerProviderS
     if (widget.vertical) {
       return AnimatedBuilder(
         animation: _ride,
-        builder: (context, _) => _VerticalJourney(steps: widget.steps, progress: _ride.value),
+        builder: (context, _) =>
+            _VerticalJourney(steps: widget.steps, progress: _ride.value),
       );
     }
     return AnimatedBuilder(
@@ -1215,7 +1412,8 @@ class _QuickJourneyState extends State<_QuickJourney> with SingleTickerProviderS
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                for (final step in widget.steps) Expanded(child: _StepTile(step: step)),
+                for (final step in widget.steps)
+                  Expanded(child: _StepTile(step: step)),
               ],
             ),
           ],
@@ -1231,7 +1429,14 @@ Path _journeyPath(Size size, {required bool rtl}) {
   final end = size.width - start;
   final path = Path()
     ..moveTo(start, y)
-    ..cubicTo(size.width * 0.22, y - 5, size.width * 0.38, y + 5, size.width * 0.5, y)
+    ..cubicTo(
+      size.width * 0.22,
+      y - 5,
+      size.width * 0.38,
+      y + 5,
+      size.width * 0.5,
+      y,
+    )
     ..cubicTo(size.width * 0.64, y - 5, size.width * 0.8, y + 4, end, y);
   if (!rtl) return path;
   final mirror = Matrix4.identity()
@@ -1254,13 +1459,17 @@ class _StepTile extends StatelessWidget {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: step.accent ? const Color(0xFFE7F6F1) : const Color(0xFFF3F5F8),
+            color: step.accent
+                ? const Color(0xFFE7F6F1)
+                : const Color(0xFFF3F5F8),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
             step.icon,
             size: 22,
-            color: step.accent ? const Color(0xFF1C8C6E) : const Color(0xFF3D4654),
+            color: step.accent
+                ? const Color(0xFF1C8C6E)
+                : const Color(0xFF3D4654),
           ),
         ),
         const SizedBox(height: 10),
@@ -1269,7 +1478,10 @@ class _StepTile extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: text.labelLarge?.copyWith(color: _ink, fontWeight: FontWeight.w700),
+          style: text.labelLarge?.copyWith(
+            color: _ink,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -1319,13 +1531,17 @@ class _VerticalJourney extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: step.accent ? const Color(0xFFE7F6F1) : const Color(0xFFF3F5F8),
+                          color: step.accent
+                              ? const Color(0xFFE7F6F1)
+                              : const Color(0xFFF3F5F8),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           step.icon,
                           size: 20,
-                          color: step.accent ? const Color(0xFF1C8C6E) : const Color(0xFF3D4654),
+                          color: step.accent
+                              ? const Color(0xFF1C8C6E)
+                              : const Color(0xFF3D4654),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1338,13 +1554,19 @@ class _VerticalJourney extends StatelessWidget {
                               step.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: text.titleSmall?.copyWith(color: _ink, fontWeight: FontWeight.w700),
+                              style: text.titleSmall?.copyWith(
+                                color: _ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             Text(
                               step.body,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: text.bodySmall?.copyWith(color: _muted, height: 1.3),
+                              style: text.bodySmall?.copyWith(
+                                color: _muted,
+                                height: 1.3,
+                              ),
                             ),
                           ],
                         ),
@@ -1374,7 +1596,13 @@ class _JourneyTrackPainter extends CustomPainter {
     _dash(canvas, metric, 0, traveled, _orange);
   }
 
-  void _dash(Canvas canvas, PathMetric metric, double from, double to, Color color) {
+  void _dash(
+    Canvas canvas,
+    PathMetric metric,
+    double from,
+    double to,
+    Color color,
+  ) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6
@@ -1423,7 +1651,8 @@ class _VerticalDashPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _VerticalDashPainter oldDelegate) => oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _VerticalDashPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
 
 class _GlanceCard {
@@ -1445,7 +1674,11 @@ class _GlanceCard {
 }
 
 class _Glance extends StatelessWidget {
-  const _Glance({required this.i18n, required this.summary, required this.wide});
+  const _Glance({
+    required this.i18n,
+    required this.summary,
+    required this.wide,
+  });
 
   final I18nBundle i18n;
   final DashboardSummary summary;
@@ -1498,7 +1731,10 @@ class _Glance extends StatelessWidget {
             children: [
               _PanelHeading(title: i18n.t('home.glanceTitle')),
               const SizedBox(height: 16),
-              if (wide) _GlanceBoard(cards: cards) else _GlanceStack(cards: cards),
+              if (wide)
+                _GlanceBoard(cards: cards)
+              else
+                _GlanceStack(cards: cards),
             ],
           ),
         ),
@@ -1515,10 +1751,8 @@ class _PanelHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
-      color: _ink,
-      fontWeight: FontWeight.w700,
-    );
+    final titleStyle = Theme.of(context).textTheme.headlineSmall
+        ?.copyWith(color: _ink, fontWeight: FontWeight.w700);
     return SizedBox(
       width: double.infinity,
       child: Column(
@@ -1541,7 +1775,9 @@ class _GlanceStack extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 28.0;
-        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 320.0;
         final size = math.min(118.0, (width - gap) / 2 * 0.86);
         return Align(
           alignment: Alignment.center,
@@ -1583,7 +1819,10 @@ class _GlanceOrb extends StatelessWidget {
                 width: size,
                 height: size,
                 child: CustomPaint(
-                  painter: _OrbRingPainter(tint: card.tint, accent: card.accent),
+                  painter: _OrbRingPainter(
+                    tint: card.tint,
+                    accent: card.accent,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1674,7 +1913,13 @@ class _GlanceBoard extends StatelessWidget {
       height: 168,
       child: Stack(
         children: [
-          const Positioned(top: 0, left: 18, right: 18, height: 52, child: _GlanceRoute()),
+          const Positioned(
+            top: 0,
+            left: 18,
+            right: 18,
+            height: 52,
+            child: _GlanceRoute(),
+          ),
           Positioned(
             top: 44,
             left: 0,
@@ -1726,7 +1971,10 @@ class _GlanceTile extends StatelessWidget {
                   Container(
                     width: 42,
                     height: 42,
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     child: Icon(card.icon, color: card.accent, size: 22),
                   ),
                   const SizedBox(width: 12),
@@ -1749,7 +1997,10 @@ class _GlanceTile extends StatelessWidget {
                           card.label,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: text.bodySmall?.copyWith(color: _muted, height: 1.25),
+                          style: text.bodySmall?.copyWith(
+                            color: _muted,
+                            height: 1.25,
+                          ),
                         ),
                       ],
                     ),
@@ -1773,8 +2024,18 @@ class _CardWavePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = Path()
       ..moveTo(0, size.height * 0.7)
-      ..quadraticBezierTo(size.width * 0.28, size.height * 0.05, size.width * 0.52, size.height * 0.62)
-      ..quadraticBezierTo(size.width * 0.74, size.height, size.width, size.height * 0.28);
+      ..quadraticBezierTo(
+        size.width * 0.28,
+        size.height * 0.05,
+        size.width * 0.52,
+        size.height * 0.62,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.74,
+        size.height,
+        size.width,
+        size.height * 0.28,
+      );
     canvas.drawPath(
       path,
       Paint()
@@ -1786,7 +2047,8 @@ class _CardWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CardWavePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _CardWavePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _GlanceRoute extends StatefulWidget {
@@ -1796,13 +2058,17 @@ class _GlanceRoute extends StatefulWidget {
   State<_GlanceRoute> createState() => _GlanceRouteState();
 }
 
-class _GlanceRouteState extends State<_GlanceRoute> with SingleTickerProviderStateMixin {
+class _GlanceRouteState extends State<_GlanceRoute>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ride;
 
   @override
   void initState() {
     super.initState();
-    _ride = AnimationController(vsync: this, duration: const Duration(milliseconds: 14000));
+    _ride = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 14000),
+    );
   }
 
   @override
@@ -1849,9 +2115,30 @@ class _GlanceRoutePainter extends CustomPainter {
   Path _path(Size size) {
     final path = Path()
       ..moveTo(0, size.height * 0.62)
-      ..cubicTo(size.width * 0.12, size.height * 0.12, size.width * 0.22, size.height * 0.95, size.width * 0.36, size.height * 0.48)
-      ..cubicTo(size.width * 0.5, size.height * 0.05, size.width * 0.64, size.height * 0.9, size.width * 0.78, size.height * 0.4)
-      ..cubicTo(size.width * 0.88, size.height * 0.12, size.width * 0.94, size.height * 0.55, size.width, size.height * 0.34);
+      ..cubicTo(
+        size.width * 0.12,
+        size.height * 0.12,
+        size.width * 0.22,
+        size.height * 0.95,
+        size.width * 0.36,
+        size.height * 0.48,
+      )
+      ..cubicTo(
+        size.width * 0.5,
+        size.height * 0.05,
+        size.width * 0.64,
+        size.height * 0.9,
+        size.width * 0.78,
+        size.height * 0.4,
+      )
+      ..cubicTo(
+        size.width * 0.88,
+        size.height * 0.12,
+        size.width * 0.94,
+        size.height * 0.55,
+        size.width,
+        size.height * 0.34,
+      );
     if (!rtl) return path;
     final mirror = Matrix4.identity()
       ..translateByDouble(size.width, 0, 0, 1)
@@ -1871,7 +2158,10 @@ class _GlanceRoutePainter extends CustomPainter {
         ..strokeWidth = 1.6
         ..strokeCap = StrokeCap.round,
     );
-    final traveled = metric.extractPath(0, metric.length * progress.clamp(0.0, 1.0));
+    final traveled = metric.extractPath(
+      0,
+      metric.length * progress.clamp(0.0, 1.0),
+    );
     canvas.drawPath(
       traveled,
       Paint()
@@ -1880,27 +2170,20 @@ class _GlanceRoutePainter extends CustomPainter {
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round,
     );
-    const tones = [Color(0xFF3B6FD8), Color(0xFF1F9D62), _orange, Color(0xFF7C5CD6)];
+    const tones = [
+      Color(0xFF3B6FD8),
+      Color(0xFF1F9D62),
+      _orange,
+      Color(0xFF7C5CD6),
+    ];
     for (var i = 0; i < tones.length; i++) {
-      final point = metric.getTangentForOffset(metric.length * ((i + 0.5) / tones.length));
+      final point = metric.getTangentForOffset(
+        metric.length * ((i + 0.5) / tones.length),
+      );
       if (point == null) continue;
       canvas.drawCircle(point.position, 5.5, Paint()..color = Colors.white);
       canvas.drawCircle(point.position, 3.4, Paint()..color = tones[i]);
     }
-    final at = metric.getTangentForOffset(metric.length * progress.clamp(0.0, 1.0));
-    if (at == null) return;
-    canvas.save();
-    canvas.translate(at.position.dx, at.position.dy);
-    canvas.rotate(at.angle);
-    if (math.cos(at.angle) < 0) canvas.scale(1, -1);
-    final body = Paint()..color = const Color(0xFF243040);
-    final glass = Paint()..color = const Color(0xFF8FB4D8);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(-16, -11, 2, -4), const Radius.circular(1.4)), body);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(2, -9, 12, -4), const Radius.circular(1.6)), body);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(6, -8, 11, -5.2), const Radius.circular(0.8)), glass);
-    canvas.drawCircle(const Offset(-8, -2.2), 2.3, body);
-    canvas.drawCircle(const Offset(7, -2.2), 2.3, body);
-    canvas.restore();
   }
 
   @override
@@ -1949,14 +2232,21 @@ class _RecentShipments extends StatelessWidget {
               DecoratedBox(
                 decoration: _homePanel(),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(wide ? 28 : 16, 8, wide ? 28 : 16, 8),
+                  padding: EdgeInsets.fromLTRB(
+                    wide ? 28 : 16,
+                    8,
+                    wide ? 28 : 16,
+                    8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (loading)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 28),
-                          child: Center(child: CircularProgressIndicator(color: _orange)),
+                          child: Center(
+                            child: CircularProgressIndicator(color: _orange),
+                          ),
                         )
                       else if (visible.isEmpty)
                         Padding(
@@ -1966,13 +2256,19 @@ class _RecentShipments extends StatelessWidget {
                               Text(
                                 i18n.t('home.noShipments'),
                                 textAlign: TextAlign.center,
-                                style: text.titleMedium?.copyWith(color: _ink, fontWeight: FontWeight.w600),
+                                style: text.titleMedium?.copyWith(
+                                  color: _ink,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 i18n.t('home.emptyHint'),
                                 textAlign: TextAlign.center,
-                                style: text.bodyMedium?.copyWith(color: _muted, height: 1.4),
+                                style: text.bodyMedium?.copyWith(
+                                  color: _muted,
+                                  height: 1.4,
+                                ),
                               ),
                             ],
                           ),
@@ -2022,18 +2318,32 @@ class _RecentRow extends StatelessWidget {
         ? i18n.t('common.dash')
         : '${formatNumber(shipment.weightTons)} ${i18n.t('common.tons')}';
     final pickup = _place(i18n, shipment.pickupCity, shipment.pickupAddress);
-    final delivery = _place(i18n, shipment.deliveryCity, shipment.deliveryAddress);
+    final delivery = _place(
+      i18n,
+      shipment.deliveryCity,
+      shipment.deliveryAddress,
+    );
     final identity = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          bidiIsolate(reference.isNotEmpty ? reference : (cargo.isEmpty ? weight : cargo)),
+          bidiIsolate(
+            reference.isNotEmpty ? reference : (cargo.isEmpty ? weight : cargo),
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: text.titleSmall?.copyWith(color: _ink, fontWeight: FontWeight.w700),
+          style: text.titleSmall?.copyWith(
+            color: _ink,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         if (reference.isNotEmpty && cargo.isNotEmpty)
-          Text(bidiIsolate(cargo), maxLines: 1, overflow: TextOverflow.ellipsis, style: text.bodySmall?.copyWith(color: _muted)),
+          Text(
+            bidiIsolate(cargo),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodySmall?.copyWith(color: _muted),
+          ),
         Text(
           '${bidiIsolate(pickup)}  →  ${bidiIsolate(delivery)}',
           maxLines: 1,
@@ -2047,8 +2357,14 @@ class _RecentRow extends StatelessWidget {
       i18n.t('home.stageQuotes'),
       i18n.t('home.stageAccepted'),
     ];
-    final track = _RequestTrack(labels: stages, index: _requestStage(shipment.status));
-    final badge = StatusBadge(status: shipment.status ?? '', label: i18n.status(shipment.status));
+    final track = _RequestTrack(
+      labels: stages,
+      index: _requestStage(shipment.status),
+    );
+    final badge = StatusBadge(
+      status: shipment.status ?? '',
+      label: i18n.status(shipment.status),
+    );
     final whenText = Text(
       formatDate(when, locale: i18n.locale.languageCode),
       style: text.bodySmall?.copyWith(color: _muted),
@@ -2058,7 +2374,9 @@ class _RecentRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          border: divided ? const Border(bottom: BorderSide(color: _line)) : null,
+          border: divided
+              ? const Border(bottom: BorderSide(color: _line))
+              : null,
         ),
         child: wide
             ? Row(
@@ -2067,7 +2385,13 @@ class _RecentRow extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(flex: 5, child: track),
                   const SizedBox(width: 12),
-                  SizedBox(width: 96, child: Text(weight, style: text.bodyMedium?.copyWith(color: _ink))),
+                  SizedBox(
+                    width: 96,
+                    child: Text(
+                      weight,
+                      style: text.bodyMedium?.copyWith(color: _ink),
+                    ),
+                  ),
                   SizedBox(width: 112, child: whenText),
                   badge,
                   const SizedBox(width: 4),
@@ -2085,7 +2409,10 @@ class _RecentRow extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('$weight   ${formatDate(when, locale: i18n.locale.languageCode)}', style: text.bodySmall?.copyWith(color: _muted)),
+                  Text(
+                    '$weight   ${formatDate(when, locale: i18n.locale.languageCode)}',
+                    style: text.bodySmall?.copyWith(color: _muted),
+                  ),
                   const SizedBox(height: 8),
                   track,
                 ],
@@ -2114,13 +2441,17 @@ class _RequestTrack extends StatefulWidget {
   State<_RequestTrack> createState() => _RequestTrackState();
 }
 
-class _RequestTrackState extends State<_RequestTrack> with SingleTickerProviderStateMixin {
+class _RequestTrackState extends State<_RequestTrack>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ride;
 
   @override
   void initState() {
     super.initState();
-    _ride = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
+    _ride = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
   }
 
   @override
@@ -2138,7 +2469,8 @@ class _RequestTrackState extends State<_RequestTrack> with SingleTickerProviderS
   @override
   void didUpdateWidget(covariant _RequestTrack oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index && !MediaQuery.disableAnimationsOf(context)) {
+    if (oldWidget.index != widget.index &&
+        !MediaQuery.disableAnimationsOf(context)) {
       _ride.forward(from: 0);
     }
   }
@@ -2194,12 +2526,17 @@ class _RequestTrackState extends State<_RequestTrack> with SingleTickerProviderS
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  fontSize: 11,
-                                  height: 1.1,
-                                  color: index != null && i == index ? _ink : _muted,
-                                  fontWeight: index != null && i == index ? FontWeight.w600 : FontWeight.w500,
-                                ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      fontSize: 11,
+                                      height: 1.1,
+                                      color: index != null && i == index
+                                          ? _ink
+                                          : _muted,
+                                      fontWeight: index != null && i == index
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
                               ),
                             ],
                           ),
@@ -2236,18 +2573,27 @@ class _StageNode extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: color, width: current ? 2 : 1.5),
         boxShadow: current
-            ? const [BoxShadow(color: Color(0x47F15A22), blurRadius: 8, spreadRadius: 1)]
+            ? const [
+                BoxShadow(
+                  color: Color(0x47F15A22),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ]
             : null,
       ),
       child: done
           ? const Icon(Icons.check, size: 10, color: Colors.white)
           : (current
-              ? Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(color: _orange, shape: BoxShape.circle),
-                )
-              : null),
+                ? Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: _orange,
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                : null),
     );
   }
 }
@@ -2338,12 +2684,19 @@ class _OrangeButton extends StatelessWidget {
         backgroundColor: _orange,
         foregroundColor: Colors.white,
         minimumSize: large ? const Size(0, 64) : null,
-        padding: EdgeInsets.symmetric(horizontal: large ? 32 : 16, vertical: large ? 20 : 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(large ? 16 : 10)),
+        padding: EdgeInsets.symmetric(
+          horizontal: large ? 32 : 16,
+          vertical: large ? 20 : 14,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(large ? 16 : 10),
+        ),
       ),
       child: child,
     );
-    final sized = expanded ? SizedBox(width: double.infinity, child: button) : button;
+    final sized = expanded
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
     if (!pulse) return sized;
     return _PulsingButton(child: sized);
   }
@@ -2358,13 +2711,17 @@ class _PulsingButton extends StatefulWidget {
   State<_PulsingButton> createState() => _PulsingButtonState();
 }
 
-class _PulsingButtonState extends State<_PulsingButton> with SingleTickerProviderStateMixin {
+class _PulsingButtonState extends State<_PulsingButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
 
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
   }
 
   @override

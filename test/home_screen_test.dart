@@ -10,7 +10,9 @@ import 'package:mz_logistics_customer_app/features/home/presentation/home_screen
 import 'package:mz_logistics_customer_app/features/shipments/data/shipment_model.dart';
 import 'package:mz_logistics_customer_app/features/shipments/data/truck_type.dart';
 import 'package:mz_logistics_customer_app/features/shipments/presentation/shipment_providers.dart';
+import 'package:mz_logistics_customer_app/features/trips/data/trip_model.dart';
 import 'package:mz_logistics_customer_app/shared/models/pagination_meta.dart';
+import 'package:mz_logistics_customer_app/shared/models/user.dart';
 
 void main() {
   testWidgets('home board lays out on a phone in Arabic', (tester) async {
@@ -29,6 +31,7 @@ void main() {
     await _pumpHome(tester, const Size(1280, 900), _english);
     expect(find.text('Move cargo'), findsOneWidget);
     expect(find.text('with confidence.'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Pending quotations'), 300);
     expect(find.text('Pending quotations'), findsOneWidget);
     expect(find.text('Invoices'), findsOneWidget);
     expect(find.text('Trips in transit'), findsOneWidget);
@@ -58,11 +61,88 @@ void main() {
         TruckTypeOption(code: 'reefer', name: 'Reefer', nameAr: 'مبرد'),
       ],
     );
+    await tester.scrollUntilVisible(find.textContaining('Muscat'), 300);
     expect(find.textContaining('Muscat'), findsWidgets);
     expect(find.textContaining('Sohar'), findsWidgets);
     expect(find.text('Truck types'), findsOneWidget);
-    expect(find.text('Flatbed'), findsOneWidget);
-    expect(find.text('Reefer'), findsOneWidget);
+    expect(
+      find.text('Choose a type to start a shipment request'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Flatbed'), findsWidgets);
+    expect(find.textContaining('Reefer'), findsWidgets);
+    expect(find.text('Follow trip'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    final flatbed = find.ancestor(
+      of: find.textContaining('Flatbed'),
+      matching: find.byType(InkWell),
+    );
+    await tester.ensureVisible(flatbed);
+    await tester.tap(flatbed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('truck:flatbed'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('home shows the nearest moving trip', (tester) async {
+    await _pumpHome(
+      tester,
+      const Size(390, 1400),
+      _english,
+      liveTrip: Trip(
+        id: 9,
+        status: 'in_transit',
+        pickupCity: 'Muscat',
+        deliveryCity: 'Sohar',
+        etaAt: DateTime.utc(2026, 10, 15, 12, 30),
+        truck: const TruckSummary(id: 3, plateNumber: '12345'),
+        driver: const UserAccount(
+          id: 4,
+          name: 'Ahmed',
+          email: 'ahmed@example.com',
+        ),
+      ),
+    );
+    expect(find.text('On the road now'), findsOneWidget);
+    expect(find.textContaining('Muscat'), findsWidgets);
+    expect(find.textContaining('Sohar'), findsWidgets);
+    expect(find.textContaining('12345'), findsOneWidget);
+    expect(find.textContaining('Ahmed'), findsOneWidget);
+    expect(find.text('Follow trip'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.ensureVisible(find.text('Follow trip'));
+    await tester.tap(find.text('Follow trip'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('trip:9'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('moving trip lays out on a phone in Arabic', (tester) async {
+    await _pumpHome(
+      tester,
+      const Size(360, 1400),
+      _arabic,
+      textScale: 1.3,
+      liveTrip: Trip(
+        id: 9,
+        status: 'in_transit',
+        pickupCity: 'مسقط',
+        deliveryCity: 'صحار',
+        truck: const TruckSummary(id: 3, plateNumber: '12345'),
+        driver: const UserAccount(
+          id: 4,
+          name: 'أحمد',
+          email: 'ahmed@example.com',
+        ),
+      ),
+    );
+    expect(find.text('في الطريق الآن'), findsOneWidget);
+    expect(find.text('متابعة الرحلة'), findsOneWidget);
+    expect(find.textContaining('12345'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
@@ -102,9 +182,14 @@ const _arabic = I18nBundle(
     'nav.profile': 'الملف',
     'nav.notifications': 'الإشعارات',
     'home.heroAccent': 'بثقة.',
-    'home.heroBody': 'اطلب النقل، وقارن عروض الأسعار من مزودي الخدمة الموثوقين.',
+    'home.heroBody':
+        'اطلب النقل، وقارن عروض الأسعار من مزودي الخدمة الموثوقين.',
     'home.eyebrow': 'نقل موثوق',
     'home.fleetTitle': 'أنواع الشاحنات',
+    'home.fleetHint': 'اختر النوع لبدء طلب الشحن',
+    'home.fleetRequest': 'طلب شحن بنوع {type}',
+    'home.liveTripNow': 'في الطريق الآن',
+    'home.liveTripFollow': 'متابعة الرحلة',
     'home.quickAction': 'إجراء سريع',
     'home.quickTitle': 'أنشئ طلب شحن جديد',
     'home.quickBody': 'احصل على عروض أسعار.',
@@ -118,6 +203,12 @@ const _arabic = I18nBundle(
     'home.stepTrackBody': 'تابع المهمة حتى التسليم',
     'home.pickupLabel': 'موقع التحميل',
     'home.deliveryLabel': 'موقع التسليم',
+    'common.eta': 'الوصول المتوقع',
+    'common.dash': '—',
+    'common.retry': 'إعادة المحاولة',
+    'trip.truck': 'الشاحنة',
+    'trip.driver': 'السائق',
+    'trip.stageHint.in_transit': 'الشحنة في الطريق إلى موقع التسليم.',
     'home.glanceTitle': 'ملخص النشاط',
     'home.shipmentsTotal': 'كل الطلبات',
     'home.stageCreated': 'تم الإنشاء',
@@ -169,6 +260,10 @@ const _english = I18nBundle(
     'home.heroBody': 'Request transportation and compare quotations.',
     'home.eyebrow': 'Reliable transport for a stronger tomorrow',
     'home.fleetTitle': 'Truck types',
+    'home.fleetHint': 'Choose a type to start a shipment request',
+    'home.fleetRequest': 'Request a shipment with {type}',
+    'home.liveTripNow': 'On the road now',
+    'home.liveTripFollow': 'Follow trip',
     'home.quickAction': 'Quick action',
     'home.quickTitle': 'Create a new shipment request',
     'home.quickBody': 'Get quotations from trusted transport providers',
@@ -182,6 +277,11 @@ const _english = I18nBundle(
     'home.stepTrackBody': 'Follow the job until delivery',
     'home.pickupLabel': 'Pickup location',
     'home.deliveryLabel': 'Delivery location',
+    'common.eta': 'ETA',
+    'common.retry': 'Retry',
+    'trip.truck': 'Truck',
+    'trip.driver': 'Driver',
+    'trip.stageHint.in_transit': 'The shipment is on the way to delivery.',
     'home.glanceTitle': 'Activity summary',
     'home.shipmentsTotal': 'All requests',
     'home.stageCreated': 'Created',
@@ -227,6 +327,7 @@ Future<void> _pumpHome(
   double textScale = 1,
   List<ShipmentRequest> shipments = const [],
   List<TruckTypeOption> truckTypes = const [],
+  Trip? liveTrip,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -239,7 +340,12 @@ Future<void> _pumpHome(
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/shipments/new',
-        builder: (context, state) => const SizedBox(),
+        builder: (context, state) =>
+            Text('truck:${state.uri.queryParameters['truck'] ?? ''}'),
+      ),
+      GoRoute(
+        path: '/trips/:id',
+        builder: (context, state) => Text('trip:${state.pathParameters['id']}'),
       ),
       GoRoute(
         path: '/shipments',
@@ -265,6 +371,7 @@ Future<void> _pumpHome(
           ),
         ),
         truckTypesProvider.overrideWith((ref) async => truckTypes),
+        featuredInTransitTripProvider.overrideWith((ref) async => liveTrip),
       ],
       child: MaterialApp.router(
         locale: bundle.locale,
@@ -276,8 +383,10 @@ Future<void> _pumpHome(
         ],
         builder: (context, child) {
           return MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(textScale)),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(textScale),
+              disableAnimations: true,
+            ),
             child: child ?? const SizedBox.shrink(),
           );
         },

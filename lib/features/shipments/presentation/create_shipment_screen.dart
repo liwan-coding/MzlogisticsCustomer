@@ -24,7 +24,9 @@ import '../data/shipment_repository.dart';
 import 'shipment_providers.dart';
 
 class CreateShipmentScreen extends ConsumerStatefulWidget {
-  const CreateShipmentScreen({super.key});
+  const CreateShipmentScreen({super.key, this.initialTruckType});
+
+  final String? initialTruckType;
 
   @override
   ConsumerState<CreateShipmentScreen> createState() =>
@@ -60,6 +62,10 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialTruckType?.trim();
+    if (initial != null && initial.isNotEmpty) {
+      _truckType = initial;
+    }
     _cargoType.addListener(_refreshDraft);
     _weight.addListener(_refreshDraft);
     _quantity.addListener(_refreshDraft);
@@ -272,40 +278,40 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
               ),
               const SizedBox(height: 18),
               AnimatedSwitcher(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 380),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  layoutBuilder: (currentChild, previousChildren) {
-                    return Stack(
-                      alignment: Alignment.topCenter,
-                      children: [...previousChildren, ?currentChild],
-                    );
-                  },
-                  transitionBuilder: (child, animation) {
-                    final rtl = Directionality.of(context) == TextDirection.rtl;
-                    final forward = rtl ? -_stepDirection : _stepDirection;
-                    final incoming =
-                        animation.status == AnimationStatus.forward ||
-                        animation.status == AnimationStatus.completed;
-                    final travel = (incoming ? forward : -forward) * 0.16;
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: Offset(travel, 0),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: KeyedSubtree(
-                    key: ValueKey(_step),
-                    child: AppAppear(
-                      index: _step,
-                      child: Column(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 380),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: [...previousChildren, ?currentChild],
+                  );
+                },
+                transitionBuilder: (child, animation) {
+                  final rtl = Directionality.of(context) == TextDirection.rtl;
+                  final forward = rtl ? -_stepDirection : _stepDirection;
+                  final incoming =
+                      animation.status == AnimationStatus.forward ||
+                      animation.status == AnimationStatus.completed;
+                  final travel = (incoming ? forward : -forward) * 0.16;
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(travel, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: KeyedSubtree(
+                  key: ValueKey(_step),
+                  child: AppAppear(
+                    index: _step,
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
@@ -333,8 +339,8 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                         ),
                       ],
                     ),
-                    ),
                   ),
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -512,12 +518,15 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
       final custom = _customTruckType.text.trim();
       return custom.isEmpty ? null : custom;
     }
-    if (_truckType == null ||
-        _truckType!.isEmpty ||
-        _truckType == _otherTruckType) {
+    final code = _truckType;
+    if (code == null || code.isEmpty || code == _otherTruckType) {
       return null;
     }
-    return _truckType;
+    final items = ref.read(truckTypesProvider).asData?.value;
+    if (items != null && !items.any((type) => type.code == code)) {
+      return null;
+    }
+    return code;
   }
 
   Widget _truckTypeField(I18nBundle i18n) {
@@ -565,13 +574,14 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
           );
         }
         final writingCustom = _truckType == _otherTruckType;
+        final known = items.any((type) => type.code == _truckType);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppDropdown<String>(
               label: i18n.t('shipment.truckType'),
               hint: i18n.t('shipment.chooseTruckType'),
-              value: _truckType,
+              value: writingCustom || known ? _truckType : null,
               errorText: missingChoice ? _error : null,
               enabled: !_submitting,
               options: [
@@ -586,12 +596,12 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                 ),
               ],
               onChanged: (value) => setState(() {
-                      _truckType = value;
-                      if (_error == i18n.t('shipment.truckTypeRequired') ||
-                          _error == i18n.t('shipment.customTruckTypeRequired')) {
-                        _error = null;
-                      }
-                    }),
+                _truckType = value;
+                if (_error == i18n.t('shipment.truckTypeRequired') ||
+                    _error == i18n.t('shipment.customTruckTypeRequired')) {
+                  _error = null;
+                }
+              }),
             ),
             if (writingCustom) ...[
               const SizedBox(height: 12),
