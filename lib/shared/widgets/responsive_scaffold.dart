@@ -411,18 +411,20 @@ class _BottomNavItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          fontSize: 11,
-                          height: 1.1,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: color,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            fontSize: 12,
+                            height: 1.15,
+                          ),
                         ),
                       ),
                     ),

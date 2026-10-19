@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/constants/app_constants.dart';
 import 'core/i18n/i18n_controller.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -42,6 +43,25 @@ class MzCustomerApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: router,
+      builder: (context, child) {
+        final content = child ?? const SizedBox.shrink();
+        final width = MediaQuery.sizeOf(context).width;
+        if (width >= AppConstants.tabletBreakpoint) return content;
+        final compact = width < AppConstants.compactBreakpoint;
+        final theme = Theme.of(context);
+        return Theme(
+          data: theme.copyWith(
+            inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: compact ? 12 : 14,
+                vertical: compact ? 12 : 13,
+              ),
+            ),
+          ),
+          child: content,
+        );
+      },
     );
   }
 }

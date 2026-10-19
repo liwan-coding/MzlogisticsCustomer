@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/i18n/i18n_controller.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_glyph.dart';
 import '../../../../shared/widgets/app_route_line.dart';
@@ -45,6 +46,34 @@ class ShipmentCard extends StatelessWidget {
     final tone = shipmentStatusTone(status);
     final from = shipment.pickupCity ?? shipment.pickupAddress ?? '—';
     final to = shipment.deliveryCity ?? shipment.deliveryAddress ?? '—';
+    final tight = context.isCompact || compact;
+    final badge = StatusBadge(status: status, label: i18n.status(status));
+    final identity = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          maxLines: tight ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+          style: text.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            height: 1.25,
+          ),
+        ),
+        if (showReference) ...[
+          const SizedBox(height: 2),
+          Text(
+            reference,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.labelMedium?.copyWith(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -58,7 +87,7 @@ class ShipmentCard extends StatelessWidget {
               child: const SizedBox(height: 3),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(16, compact ? 12 : 14, 12, compact ? 12 : 14),
+              padding: EdgeInsets.fromLTRB(tight ? 12 : 16, tight ? 12 : 14, tight ? 12 : 12, tight ? 12 : 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -67,46 +96,25 @@ class ShipmentCard extends StatelessWidget {
                     children: [
                       AppGlyph(
                         icon: shipmentStatusIcon(status),
-                        size: compact ? 40 : 44,
-                        iconSize: compact ? 20 : 22,
+                        size: tight ? 40 : 44,
+                        iconSize: tight ? 20 : 22,
                         tone: tone,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: text.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            if (showReference) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                reference,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: text.labelMedium?.copyWith(
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ],
+                      SizedBox(width: tight ? 10 : 12),
+                      Expanded(child: identity),
+                      if (!tight) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 132),
+                          child: badge,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 132),
-                        child: StatusBadge(status: status, label: i18n.status(status)),
-                      ),
+                      ],
                     ],
                   ),
+                  if (tight) ...[
+                    const SizedBox(height: 8),
+                    badge,
+                  ],
                   SizedBox(height: compact ? 10 : 14),
                   if (compact)
                     AppRouteLine(

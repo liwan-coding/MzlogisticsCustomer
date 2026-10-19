@@ -41,8 +41,7 @@ class ProfileScreen extends ConsumerWidget {
       onLogout: () => _logout(context, ref, i18n),
     );
     final wide = !context.isMobile;
-
-    const gap = 22.0;
+    final gap = context.stackGap;
 
     return PageScrollView(
       child: ContentWidth(
@@ -56,7 +55,7 @@ class ProfileScreen extends ConsumerWidget {
               index: 0,
               child: ProfileIdentityHeader(i18n: i18n, user: user),
             ),
-            const SizedBox(height: gap),
+            SizedBox(height: gap),
             if (wide) ...[
               AppAppear(
                 index: 1,
@@ -65,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                   children: [account, contact],
                 ),
               ),
-              const SizedBox(height: gap),
+              SizedBox(height: gap),
               AppAppear(
                 index: 2,
                 child: EqualCardRow(
@@ -76,11 +75,11 @@ class ProfileScreen extends ConsumerWidget {
             ]
             else ...[
               AppAppear(index: 1, child: account),
-              const SizedBox(height: gap),
+              SizedBox(height: gap),
               AppAppear(index: 2, child: organization),
-              const SizedBox(height: gap),
+              SizedBox(height: gap),
               AppAppear(index: 3, child: contact),
-              const SizedBox(height: gap),
+              SizedBox(height: gap),
               AppAppear(index: 4, child: settings),
             ],
             const SizedBox(height: 8),

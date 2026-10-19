@@ -83,13 +83,11 @@ class _ShipmentsListScreenState extends ConsumerState<ShipmentsListScreen> {
             child: PageList(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: AppButton(
-                    label: i18n.t('shipment.create'),
-                    icon: Icons.add_rounded,
-                    onPressed: () => context.push('/shipments/new'),
-                  ),
+                AppButton(
+                  label: i18n.t('shipment.create'),
+                  icon: Icons.add_rounded,
+                  expanded: context.isMobile,
+                  onPressed: () => context.push('/shipments/new'),
                 ),
                 const SizedBox(height: 12),
                 AppListToolbar<_ShipmentFilter>(

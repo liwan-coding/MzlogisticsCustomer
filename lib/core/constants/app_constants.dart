@@ -46,6 +46,7 @@ class AppConstants {
 
   static const double desktopBreakpoint = 1024;
   static const double tabletBreakpoint = 768;
+  static const double compactBreakpoint = 400;
   static const double wideBreakpoint = 1440;
 
   static const List<String> supportedLocales = ['en', 'ar'];

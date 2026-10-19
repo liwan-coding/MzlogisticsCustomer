@@ -258,7 +258,7 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: context.contentPadding,
             itemCount: visible.length + 1,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
@@ -316,6 +316,11 @@ class _QuotationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = i18n.locale.languageCode;
+    final tight = context.isCompact;
+    final badge = StatusBadge(
+      status: quotation.status ?? '',
+      label: i18n.status(quotation.status),
+    );
     return Card(
       clipBehavior: Clip.antiAlias,
       color: bestPrice ? AppColors.amberSoft : AppColors.white,
@@ -329,30 +334,37 @@ class _QuotationCard extends StatelessWidget {
               child: const SizedBox(height: 3),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(tight ? 12 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
                           quotation.provider?.displayName(locale) ??
                               quotation.reference ??
                               '—',
+                          maxLines: tight ? 2 : 1,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.25),
                         ),
                       ),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 132),
-                        child: StatusBadge(
-                          status: quotation.status ?? '',
-                          label: i18n.status(quotation.status),
+                      if (!tight) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 132),
+                          child: badge,
                         ),
-                      ),
+                      ],
                     ],
                   ),
+                  if (tight) ...[
+                    const SizedBox(height: 8),
+                    badge,
+                  ],
                   if (bestPrice) ...[
                     const SizedBox(height: 8),
                     Container(

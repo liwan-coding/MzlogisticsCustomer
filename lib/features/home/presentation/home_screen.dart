@@ -29,15 +29,26 @@ const _muted = Color(0xFF6B7280);
 const _line = Color(0xFFE7E9EF);
 const _canvas = Color(0xFFF7F8FB);
 
-double _sectionGap(bool wide) => wide ? 48 : 32;
+double _sectionGap(BuildContext context) {
+  if (context.isDesktop) return 48;
+  if (context.isCompact) return 22;
+  return 28;
+}
 
-EdgeInsets _sectionPadding(bool wide) {
-  return EdgeInsets.fromLTRB(
-    wide ? 40 : 16,
-    _sectionGap(wide),
-    wide ? 40 : 16,
-    0,
-  );
+EdgeInsets _sectionPadding(BuildContext context) {
+  final inset = context.isDesktop ? 40.0 : (context.isCompact ? 14.0 : 16.0);
+  return EdgeInsets.fromLTRB(inset, _sectionGap(context), inset, 0);
+}
+
+TextStyle? _homeTitle(BuildContext context, {FontWeight weight = FontWeight.w700}) {
+  final text = Theme.of(context).textTheme;
+  if (context.isDesktop) {
+    return text.headlineSmall?.copyWith(color: _ink, fontWeight: weight, height: 1.15);
+  }
+  if (context.isCompact) {
+    return text.titleMedium?.copyWith(color: _ink, fontWeight: weight, height: 1.25);
+  }
+  return text.titleLarge?.copyWith(color: _ink, fontWeight: weight, height: 1.2);
 }
 
 BoxDecoration _homePanel() {
@@ -157,8 +168,8 @@ class _HomeBody extends StatelessWidget {
         _ScrollReveal(
           child: shipmentsError != null
               ? Padding(
-                  padding: _sectionPadding(wide)
-                      .copyWith(bottom: _sectionGap(wide)),
+                  padding: _sectionPadding(context)
+                      .copyWith(bottom: _sectionGap(context)),
                   child: ErrorState(
                     i18n: i18n,
                     error: shipmentsError!,
@@ -386,10 +397,13 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final compact = context.isCompact;
+    final headline = wide ? 72.0 : (compact ? 32.0 : 36.0);
+    final side = wide ? 56.0 : (compact ? 16.0 : 20.0);
     return SizedBox(
       width: double.infinity,
       child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: wide ? 520 : 400),
+        constraints: BoxConstraints(minHeight: wide ? 520 : (compact ? 320 : 380)),
         child: Stack(
           children: [
             Positioned.fill(
@@ -428,10 +442,10 @@ class _Hero extends StatelessWidget {
               width: double.infinity,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  wide ? 56 : 20,
-                  wide ? 118 : 24,
-                  wide ? 56 : 20,
-                  wide ? 120 : 88,
+                  side,
+                  wide ? 118 : (compact ? 16 : 20),
+                  side,
+                  wide ? 120 : (compact ? 56 : 72),
                 ),
                 child: _HeroMotion(
                   child: Align(
@@ -452,15 +466,15 @@ class _Hero extends StatelessWidget {
                               letterSpacing: rtl ? 0 : 0.6,
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          SizedBox(height: wide ? 14 : (compact ? 8 : 10)),
                           Text(
                             i18n.t('home.heroLead'),
                             textAlign: TextAlign.center,
                             style: text.displaySmall?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
-                              height: 1.05,
-                              fontSize: wide ? 72 : 44,
+                              height: compact ? 1.15 : 1.05,
+                              fontSize: headline,
                             ),
                           ),
                           Text(
@@ -469,21 +483,21 @@ class _Hero extends StatelessWidget {
                             style: text.displaySmall?.copyWith(
                               color: _orange,
                               fontWeight: FontWeight.w700,
-                              height: 1.05,
-                              fontSize: wide ? 72 : 44,
+                              height: compact ? 1.15 : 1.05,
+                              fontSize: headline,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          SizedBox(height: wide ? 18 : (compact ? 10 : 14)),
                           Text(
                             i18n.t('home.heroBody'),
                             textAlign: TextAlign.center,
                             style: text.bodyLarge?.copyWith(
                               color: const Color(0xFFE4EAF2),
                               height: 1.45,
-                              fontSize: wide ? 20 : 17,
+                              fontSize: wide ? 20 : (compact ? 15 : 16),
                             ),
                           ),
-                          const SizedBox(height: 40),
+                          SizedBox(height: wide ? 40 : (compact ? 20 : 28)),
                           _OrangeButton(
                             label: i18n.t('home.newShipment'),
                             icon: Icons.add,
@@ -811,7 +825,7 @@ class _FleetFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: _sectionPadding(wide),
+      padding: _sectionPadding(context),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -822,11 +836,10 @@ class _FleetFrame extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(color: _ink, fontWeight: FontWeight.w700),
+                style: _homeTitle(context),
               ),
               if (hint != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   hint!,
                   textAlign: TextAlign.center,
@@ -834,7 +847,7 @@ class _FleetFrame extends StatelessWidget {
                       ?.copyWith(color: _muted, height: 1.4),
                 ),
               ],
-              const SizedBox(height: 16),
+              SizedBox(height: context.isCompact ? 12 : 16),
               child,
             ],
           ),
@@ -903,16 +916,15 @@ class _FleetStripState extends State<_FleetStrip>
           final viewport = constraints.maxWidth.isFinite
               ? constraints.maxWidth
               : 320.0;
-          const gap = 8.0;
-          final more = widget.types.length > 4;
-          const peek = 30.0;
-          final reserved = more ? gap + peek : 0.0;
-          final size = ((viewport - gap * 3 - reserved) / 4).clamp(52.0, 88.0);
+          const gap = 10.0;
+          final visible = viewport < 400 ? 2.7 : 3.4;
+          final size = (viewport / visible - gap).clamp(72.0, 104.0);
           return _strip(
             size: size,
-            small: size,
+            small: size * 0.88,
             gap: gap,
-            labelHeight: 40,
+            labelHeight: 44,
+            labelSize: size < 84 ? 12 : 13,
             scroll: true,
           );
         },
@@ -926,6 +938,7 @@ class _FleetStripState extends State<_FleetStrip>
       small: small,
       gap: 22,
       labelHeight: 40,
+      labelSize: 14,
       scroll: widget.types.length > 7,
     );
   }
@@ -935,6 +948,7 @@ class _FleetStripState extends State<_FleetStrip>
     required double small,
     required double gap,
     required double labelHeight,
+    required double labelSize,
     required bool scroll,
   }) {
     return SizedBox(
@@ -953,7 +967,7 @@ class _FleetStripState extends State<_FleetStrip>
                 ? 0.0
                 : -bob * (prominent ? 8 : 5);
             final name = type.displayName(widget.locale);
-            final itemWidth = circle + (widget.wide ? 12 : 0);
+            final itemWidth = math.max(circle, widget.wide ? circle + 12 : 76.0);
             return SizedBox(
               width: itemWidth,
               child: Align(
@@ -988,11 +1002,12 @@ class _FleetStripState extends State<_FleetStrip>
                                   textAlign: TextAlign.center,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.labelLarge
+                                  style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(
                                         color: _ink,
                                         fontWeight: FontWeight.w700,
                                         height: 1.2,
+                                        fontSize: labelSize,
                                       ),
                                 ),
                               ),
@@ -1185,7 +1200,7 @@ class _QuickAction extends StatelessWidget {
     final steps = _steps();
     final intro = _QuickIntro(i18n: i18n, onPressed: openNew, expanded: !wide);
     return Padding(
-      padding: _sectionPadding(wide),
+      padding: _sectionPadding(context),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -1212,10 +1227,10 @@ class _QuickAction extends StatelessWidget {
                   ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(
-                      wide ? 32 : 18,
-                      wide ? 26 : 18,
-                      wide ? 28 : 18,
-                      wide ? 26 : 18,
+                      wide ? 32 : (context.isCompact ? 14 : 16),
+                      wide ? 26 : (context.isCompact ? 14 : 16),
+                      wide ? 28 : (context.isCompact ? 14 : 16),
+                      wide ? 26 : (context.isCompact ? 14 : 16),
                     ),
                     child: wide
                         ? Row(
@@ -1233,7 +1248,7 @@ class _QuickAction extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               intro,
-                              const SizedBox(height: 20),
+                              SizedBox(height: context.isCompact ? 14 : 18),
                               _QuickJourney(steps: steps, vertical: true),
                             ],
                           ),
@@ -1320,21 +1335,17 @@ class _QuickIntro extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: context.isCompact ? 8 : 12),
         Text(
           i18n.t('home.quickTitle'),
-          style: text.headlineSmall?.copyWith(
-            color: _ink,
-            fontWeight: FontWeight.w800,
-            height: 1.15,
-          ),
+          style: _homeTitle(context, weight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         Text(
           i18n.t('home.quickBody'),
           style: text.bodyMedium?.copyWith(color: _muted, height: 1.45),
         ),
-        const SizedBox(height: 18),
+        SizedBox(height: context.isCompact ? 14 : 18),
         _OrangeButton(
           label: i18n.t('home.newShipment'),
           icon: Icons.add,
@@ -1504,80 +1515,77 @@ class _VerticalJourney extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tile = 76.0;
-    final height = steps.length * tile;
     final text = Theme.of(context).textTheme;
-    return SizedBox(
-      height: height,
-      child: Stack(
-        children: [
-          PositionedDirectional(
-            start: 21,
-            top: 22,
-            bottom: 22,
-            width: 2,
-            child: CustomPaint(
-              painter: _VerticalDashPainter(progress: _journeyTravel(progress)),
-            ),
+    final compact = context.isCompact;
+    return Stack(
+      children: [
+        PositionedDirectional(
+          start: compact ? 17 : 21,
+          top: 22,
+          bottom: 22,
+          width: 2,
+          child: CustomPaint(
+            painter: _VerticalDashPainter(progress: _journeyTravel(progress)),
           ),
-          Column(
-            children: [
-              for (final step in steps)
-                SizedBox(
-                  height: tile,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: step.accent
-                              ? const Color(0xFFE7F6F1)
-                              : const Color(0xFFF3F5F8),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          step.icon,
-                          size: 20,
-                          color: step.accent
-                              ? const Color(0xFF1C8C6E)
-                              : const Color(0xFF3D4654),
-                        ),
+        ),
+        Column(
+          children: [
+            for (var index = 0; index < steps.length; index++)
+              Padding(
+                padding: EdgeInsets.only(bottom: index == steps.length - 1 ? 0 : (compact ? 10 : 14)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: compact ? 36 : 44,
+                      height: compact ? 36 : 44,
+                      decoration: BoxDecoration(
+                        color: steps[index].accent
+                            ? const Color(0xFFE7F6F1)
+                            : const Color(0xFFF3F5F8),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                      child: Icon(
+                        steps[index].icon,
+                        size: compact ? 18 : 20,
+                        color: steps[index].accent
+                            ? const Color(0xFF1C8C6E)
+                            : const Color(0xFF3D4654),
+                      ),
+                    ),
+                    SizedBox(width: compact ? 10 : 12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              step.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              steps[index].title,
                               style: text.titleSmall?.copyWith(
                                 color: _ink,
                                 fontWeight: FontWeight.w700,
+                                height: 1.25,
                               ),
                             ),
+                            const SizedBox(height: 2),
                             Text(
-                              step.body,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              steps[index].body,
                               style: text.bodySmall?.copyWith(
                                 color: _muted,
-                                height: 1.3,
+                                height: 1.35,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-            ],
-          ),
-        ],
-      ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1721,7 +1729,7 @@ class _Glance extends StatelessWidget {
       ),
     ];
     return Padding(
-      padding: _sectionPadding(wide),
+      padding: _sectionPadding(context),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -1751,8 +1759,7 @@ class _PanelHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.headlineSmall
-        ?.copyWith(color: _ink, fontWeight: FontWeight.w700);
+    final titleStyle = _homeTitle(context);
     return SizedBox(
       width: double.infinity,
       child: Column(
@@ -1774,16 +1781,18 @@ class _GlanceStack extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const gap = 28.0;
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : 320.0;
-        final size = math.min(118.0, (width - gap) / 2 * 0.86);
+        final columns = width >= 640 ? 4 : 2;
+        final gap = width < 400 ? 12.0 : 16.0;
+        final raw = (width - gap * (columns - 1)) / columns;
+        final size = raw.clamp(92.0, columns == 4 ? 132.0 : 128.0);
         return Align(
           alignment: Alignment.center,
           child: Wrap(
             spacing: gap,
-            runSpacing: 20,
+            runSpacing: width < 400 ? 12 : 16,
             alignment: WrapAlignment.center,
             children: [
               for (final card in cards) _GlanceOrb(card: card, size: size),
@@ -1841,9 +1850,9 @@ class _GlanceOrb extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               SizedBox(
-                height: 36,
+                height: 40,
                 child: Text(
                   card.label,
                   textAlign: TextAlign.center,
@@ -2210,9 +2219,9 @@ class _RecentShipments extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final visible = shipments.take(6).toList();
     return Padding(
-      padding: _sectionPadding(wide).copyWith(
-        top: _sectionGap(wide) + (wide ? 28 : 20),
-        bottom: _sectionGap(wide),
+      padding: _sectionPadding(context).copyWith(
+        top: _sectionGap(context) + (wide ? 28 : 16),
+        bottom: _sectionGap(context),
       ),
       child: Align(
         alignment: Alignment.topCenter,
@@ -2346,9 +2355,9 @@ class _RecentRow extends StatelessWidget {
           ),
         Text(
           '${bidiIsolate(pickup)}  →  ${bidiIsolate(delivery)}',
-          maxLines: 1,
+          maxLines: wide ? 1 : 2,
           overflow: TextOverflow.ellipsis,
-          style: text.bodySmall?.copyWith(color: _ink, height: 1.3),
+          style: text.bodySmall?.copyWith(color: _ink, height: 1.35),
         ),
       ],
     );
@@ -2492,7 +2501,7 @@ class _RequestTrackState extends State<_RequestTrack>
         final travel = Curves.easeOutCubic.transform(_ride.value);
         final shown = index == null ? 0.0 : (index / (n - 1)) * travel;
         return SizedBox(
-          height: 46,
+          height: 58,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final slot = constraints.maxWidth / n;
@@ -2524,12 +2533,12 @@ class _RequestTrackState extends State<_RequestTrack>
                               Text(
                                 widget.labels[i],
                                 textAlign: TextAlign.center,
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.labelSmall
                                     ?.copyWith(
-                                      fontSize: 11,
-                                      height: 1.1,
+                                      fontSize: 12,
+                                      height: 1.15,
                                       color: index != null && i == index
                                           ? _ink
                                           : _muted,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/i18n/i18n_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/breakpoints.dart';
 import '../../../core/utils/bidi_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../trips/data/customer_trip_progress.dart';
@@ -76,10 +77,16 @@ class _LiveTripShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gap = wide ? 48.0 : 32.0;
-    final radius = BorderRadius.circular(28);
+    final compact = context.isCompact;
+    final gap = wide ? 48.0 : (compact ? 22.0 : 28.0);
+    final radius = BorderRadius.circular(compact ? 20 : 28);
     return Padding(
-      padding: EdgeInsets.fromLTRB(wide ? 40 : 16, gap, wide ? 40 : 16, 0),
+      padding: EdgeInsets.fromLTRB(
+        wide ? 40 : (compact ? 14 : 16),
+        gap,
+        wide ? 40 : (compact ? 14 : 16),
+        0,
+      ),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -112,10 +119,10 @@ class _LiveTripShell extends StatelessWidget {
                   ),
                   Padding(
                     padding: EdgeInsetsDirectional.fromSTEB(
-                      wide ? 32 : 22,
-                      wide ? 22 : 18,
-                      wide ? 28 : 18,
-                      wide ? 22 : 18,
+                      wide ? 32 : (compact ? 14 : 18),
+                      wide ? 22 : (compact ? 14 : 16),
+                      wide ? 28 : (compact ? 14 : 16),
+                      wide ? 22 : (compact ? 14 : 16),
                     ),
                     child: child,
                   ),
@@ -155,6 +162,35 @@ class _LiveTripCard extends StatelessWidget {
     final plate = trip.truck?.plateNumber?.trim();
     final driver = trip.driver?.name.trim();
     final colors = _statusColors(trip.status);
+    final narrow = !wide && MediaQuery.sizeOf(context).width < 420;
+    final eta = trip.etaAt == null
+        ? null
+        : Column(
+            crossAxisAlignment: narrow
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.end,
+            children: [
+              Text(
+                i18n.t('common.eta'),
+                style: text.labelMedium?.copyWith(
+                  color: _muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                formatDateTime(trip.etaAt, locale: locale),
+                textAlign: narrow ? TextAlign.start : TextAlign.end,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: text.titleSmall?.copyWith(
+                  color: _ink,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          );
     final follow = FilledButton.icon(
       onPressed: () => _openTrip(context, trip),
       style: FilledButton.styleFrom(
@@ -226,37 +262,16 @@ class _LiveTripCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                  ] else if (narrow && eta != null) ...[
+                    const SizedBox(height: 8),
+                    eta,
                   ],
                 ],
               ),
             ),
-            if (trip.etaAt != null) ...[
+            if (!narrow && eta != null) ...[
               const SizedBox(width: 12),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      i18n.t('common.eta'),
-                      style: text.labelMedium?.copyWith(
-                        color: _muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      formatDateTime(trip.etaAt, locale: locale),
-                      textAlign: TextAlign.end,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.titleSmall?.copyWith(
-                        color: _ink,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              Flexible(child: eta),
             ],
           ],
         ),
@@ -420,10 +435,15 @@ class _CityBlock extends StatelessWidget {
           textAlign: alignEnd ? TextAlign.end : TextAlign.start,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: text.titleLarge?.copyWith(
+          style: (context.isDesktop
+                  ? text.titleLarge
+                  : context.isCompact
+                      ? text.titleSmall
+                      : text.titleMedium)
+              ?.copyWith(
             color: _ink,
             fontWeight: FontWeight.w800,
-            height: 1.15,
+            height: 1.2,
           ),
         ),
       ],

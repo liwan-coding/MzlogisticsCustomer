@@ -34,9 +34,12 @@ class AuthLayout extends ConsumerWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: (narrow
+                        ? Theme.of(context).textTheme.titleLarge
+                        : Theme.of(context).textTheme.headlineSmall)
+                    ?.copyWith(
                       fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
+                      height: 1.25,
                     ),
               ),
               const SizedBox(height: 8),
@@ -47,7 +50,7 @@ class AuthLayout extends ConsumerWidget {
                       height: 1.45,
                     ),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: narrow ? 18 : 28),
               child,
             ],
           ),
