@@ -8,7 +8,6 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/i18n_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/breakpoints.dart';
 import '../../../shared/widgets/app_appear.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_glyph.dart';
@@ -216,22 +215,10 @@ class _TransferPendingScreenState extends ConsumerState<TransferPendingScreen> {
             const SizedBox(height: 16),
             if (accountCard == null)
               receipt
-            else if (context.isMobile)
-              Column(
-                children: [
-                  accountCard,
-                  const SizedBox(height: 16),
-                  receipt,
-                ],
-              )
             else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: accountCard),
-                  const SizedBox(width: 16),
-                  Expanded(child: receipt),
-                ],
+              DesktopPair(
+                primary: accountCard,
+                secondary: receipt,
               ),
           ],
         ),

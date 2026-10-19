@@ -444,48 +444,44 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.muted,
-                ),
-          ),
-        ),
-        _GroupCard(
-          child: Column(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i != children.length - 1)
-                  const Padding(
-                    padding: EdgeInsetsDirectional.only(start: 68),
-                    child: Divider(height: 1),
-                  ),
-              ],
-            ],
-          ),
-        ),
-        if (footer != null) ...[
-          const SizedBox(height: 8),
+    final text = Theme.of(context).textTheme;
+    return _GroupCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Text(
-              footer!,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.muted,
-                    height: 1.35,
-                  ),
+              title,
+              style: text.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.muted,
+              ),
             ),
           ),
+          const Divider(height: 1),
+          for (var i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i != children.length - 1)
+              const Padding(
+                padding: EdgeInsetsDirectional.only(start: 68),
+                child: Divider(height: 1),
+              ),
+          ],
+          if (footer != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              child: Text(
+                footer!,
+                style: text.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                  height: 1.35,
+                ),
+              ),
+            ),
         ],
-      ],
+      ),
     );
   }
 }

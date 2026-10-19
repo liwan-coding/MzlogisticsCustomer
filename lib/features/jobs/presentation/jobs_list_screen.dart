@@ -130,22 +130,18 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                 for (var index = 0; index < count; index++)
                   Padding(
                     padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: EqualCardRow(
+                      gap: 12,
                       children: [
-                        for (var column = 0; column < columns; column++) ...[
-                          if (column > 0) const SizedBox(width: 12),
-                          Expanded(
-                            child: () {
-                              final itemIndex = index * columns + column;
-                              if (itemIndex >= visible.length) return const SizedBox.shrink();
-                              return _Appear(
-                                index: itemIndex,
-                                child: JobCard(i18n: i18n, job: visible[itemIndex]),
-                              );
-                            }(),
-                          ),
-                        ],
+                        for (var column = 0; column < columns; column++)
+                          () {
+                            final itemIndex = index * columns + column;
+                            if (itemIndex >= visible.length) return const SizedBox.shrink();
+                            return _Appear(
+                              index: itemIndex,
+                              child: JobCard(i18n: i18n, job: visible[itemIndex]),
+                            );
+                          }(),
                       ],
                     ),
                   ),

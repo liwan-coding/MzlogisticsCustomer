@@ -42,96 +42,140 @@ class PodScreen extends ConsumerWidget {
             );
           }
           final locale = i18n.locale.languageCode;
+          final record = SectionCard(
+            key: const Key('pod-record-card'),
+            title: i18n.t('pod.title'),
+            icon: Icons.verified_rounded,
+            trailing: StatusBadge(
+              status: pod.otpVerified ? 'completed' : 'pending',
+              label: pod.otpVerified ? i18n.t('pod.otpVerified') : i18n.t('pod.otpPending'),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InfoRow(
+                  label: i18n.t('pod.receiver'),
+                  value: pod.receiverName ?? '—',
+                  icon: Icons.person_outline,
+                ),
+                const SizedBox(height: 12),
+                InfoRow(
+                  label: i18n.t('pod.receivedQty'),
+                  value: formatNumber(pod.receivedQuantity),
+                  icon: Icons.inventory_2_outlined,
+                ),
+                if (pod.notes != null) ...[
+                  const SizedBox(height: 12),
+                  InfoRow(
+                    label: i18n.t('common.notes'),
+                    value: pod.notes!,
+                    wide: true,
+                    icon: Icons.sticky_note_2_outlined,
+                  ),
+                ],
+              ],
+            ),
+          );
+          final check = SectionCard(
+            key: const Key('pod-check-card'),
+            title: i18n.t('pod.otp'),
+            icon: Icons.lock_outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InfoRow(
+                  label: i18n.t('pod.otp'),
+                  value: pod.otpVerified ? i18n.t('common.verified') : i18n.t('common.unverified'),
+                  icon: Icons.verified_outlined,
+                ),
+                const SizedBox(height: 12),
+                InfoRow(
+                  label: i18n.t('pod.capturedAt'),
+                  value: formatDateTime(pod.capturedAt, locale: locale),
+                  icon: Icons.schedule_outlined,
+                ),
+              ],
+            ),
+          );
           return ContentWidth(
             child: PageList(
               children: [
                 AppAppear(
                   index: 0,
-                  child: SectionCard(
-                  title: i18n.t('pod.title'),
-                  icon: Icons.verified_rounded,
-                  trailing: StatusBadge(
-                    status: pod.otpVerified ? 'completed' : 'pending',
-                    label: pod.otpVerified ? i18n.t('pod.otpVerified') : i18n.t('pod.otpPending'),
-                  ),
-                  child: Wrap(
-                    spacing: 24,
-                    runSpacing: 12,
-                    children: [
-                      InfoRow(label: i18n.t('pod.receiver'), value: pod.receiverName ?? '—', icon: Icons.person_outline),
-                      InfoRow(label: i18n.t('pod.receivedQty'), value: formatNumber(pod.receivedQuantity), icon: Icons.inventory_2_outlined),
-                      InfoRow(label: i18n.t('pod.otp'), value: pod.otpVerified ? i18n.t('common.verified') : i18n.t('common.unverified'), icon: Icons.lock_outline),
-                      InfoRow(label: i18n.t('pod.capturedAt'), value: formatDateTime(pod.capturedAt, locale: locale), icon: Icons.schedule_outlined),
-                      if (pod.notes != null)
-                        InfoRow(label: i18n.t('common.notes'), value: pod.notes!, wide: true, icon: Icons.sticky_note_2_outlined),
-                    ],
-                  ),
-                ),
+                  child: DesktopPair(primary: record, secondary: check),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  i18n.t('common.photos'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                if (pod.photoPaths.isEmpty)
-                  Text(i18n.t('pod.noPhotos'), style: const TextStyle(color: AppColors.muted))
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final entry in pod.photoPaths.indexed)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(AppTheme.radius),
-                          child: AuthenticatedImage(
-                            path: '/trips/${trip.id}/pod/photos/${entry.$1}',
-                            width: 160,
-                            height: 120,
-                            fit: BoxFit.cover,
+                AppAppear(
+                  index: 1,
+                  child: SectionCard(
+                    key: const Key('pod-files-card'),
+                    title: i18n.t('common.photos'),
+                    icon: Icons.photo_library_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (pod.photoPaths.isEmpty)
+                          Text(i18n.t('pod.noPhotos'), style: const TextStyle(color: AppColors.muted))
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final entry in pod.photoPaths.indexed)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                                  child: AuthenticatedImage(
+                                    path: '/trips/${trip.id}/pod/photos/${entry.$1}',
+                                    width: 160,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                    ],
+                        if (pod.signaturePath != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            i18n.t('pod.signature'),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          AuthenticatedImage(
+                            path: '/trips/${trip.id}/pod/signature',
+                            height: 120,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                        if (pod.invoicePath != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            i18n.t('pod.invoice'),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          AuthenticatedImage(
+                            path: '/trips/${trip.id}/pod/invoice',
+                            height: 180,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                        if (pod.weightTicketPath != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            i18n.t('pod.weightTicket'),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          AuthenticatedImage(
+                            path: '/trips/${trip.id}/pod/weight-ticket',
+                            height: 180,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                if (pod.signaturePath != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    i18n.t('pod.signature'),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  AuthenticatedImage(
-                    path: '/trips/${trip.id}/pod/signature',
-                    height: 120,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-                if (pod.invoicePath != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    i18n.t('pod.invoice'),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  AuthenticatedImage(
-                    path: '/trips/${trip.id}/pod/invoice',
-                    height: 180,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-                if (pod.weightTicketPath != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    i18n.t('pod.weightTicket'),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  AuthenticatedImage(
-                    path: '/trips/${trip.id}/pod/weight-ticket',
-                    height: 180,
-                    fit: BoxFit.contain,
-                  ),
-                ],
+                ),
               ],
             ),
           );

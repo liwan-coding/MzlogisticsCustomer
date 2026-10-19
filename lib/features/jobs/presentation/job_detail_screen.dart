@@ -59,85 +59,89 @@ class JobDetailScreen extends ConsumerWidget {
           final from = job.shipment?.pickupCity ?? job.shipment?.pickupAddress;
           final to = job.shipment?.deliveryCity ?? job.shipment?.deliveryAddress;
 
+          final progress = SectionCard(
+            title: i18n.t('job.progress'),
+            icon: Icons.bolt_rounded,
+            child: AppStatusStepper(
+              steps: [
+                AppStepItem(
+                  id: 'pending_dispatch',
+                  label: i18n.status('pending_dispatch'),
+                  icon: Icons.hourglass_top_rounded,
+                ),
+                AppStepItem(
+                  id: 'in_progress',
+                  label: i18n.status('in_progress'),
+                  icon: Icons.local_shipping_rounded,
+                ),
+                AppStepItem(
+                  id: 'completed',
+                  label: i18n.status('completed'),
+                  icon: Icons.verified_rounded,
+                ),
+              ],
+              currentId: _jobStep(job.status),
+              failed: job.status == 'cancelled',
+            ),
+          );
+          final summary = EntitySummaryCard(
+            title: title,
+            subtitle: cargo != null && cargo.isNotEmpty ? reference : i18n.t('job.hint'),
+            icon: jobStatusIcon(status),
+            tone: jobStatusTone(status),
+            accent: AppColors.statusForeground(status).withValues(alpha: 0.85),
+            badge: StatusBadge(status: status, label: i18n.status(status)),
+            facts: [
+              EntityFact(
+                i18n.t('common.provider'),
+                job.provider?.displayName(locale) ?? '—',
+                icon: Icons.handshake_outlined,
+              ),
+              EntityFact(
+                i18n.t('common.amount'),
+                formatAmount(job.totalPrice, currency: job.currency ?? 'OMR'),
+                icon: Icons.payments_outlined,
+              ),
+              EntityFact(
+                i18n.t('job.trips'),
+                i18n.t('job.tripsCount', {'count': '${job.trips.length}'}),
+                icon: Icons.alt_route_outlined,
+              ),
+              if (job.shipment != null)
+                EntityFact(
+                  i18n.t('paymentContract.title'),
+                  job.shipment!.paymentTerms.label(i18n),
+                  icon: Icons.event_available_outlined,
+                ),
+            ],
+            footer: from != null || to != null
+                ? AppRoutePanel(
+                    fromLabel: i18n.t('common.pickup'),
+                    toLabel: i18n.t('common.delivery'),
+                    from: from ?? '—',
+                    to: to ?? '—',
+                  )
+                : null,
+          );
+          final payment = job.shipment == null
+              ? null
+              : SectionCard(
+                  title: i18n.t('paymentContract.title'),
+                  icon: Icons.payments_outlined,
+                  child: PaymentTermsReadout(i18n: i18n, terms: job.shipment!.paymentTerms),
+                );
+
           return ContentWidth(
             child: PageList(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                DesktopPair(
-                  primary: AppAppear(
-                  index: 0,
-                  child: EntitySummaryCard(
-                    title: title,
-                    subtitle: cargo != null && cargo.isNotEmpty ? reference : i18n.t('job.hint'),
-                    icon: jobStatusIcon(status),
-                    tone: jobStatusTone(status),
-                    accent: AppColors.statusForeground(status).withValues(alpha: 0.85),
-                    badge: StatusBadge(status: status, label: i18n.status(status)),
-                    facts: [
-                      EntityFact(
-                        i18n.t('common.provider'),
-                        job.provider?.displayName(locale) ?? '—',
-                        icon: Icons.handshake_outlined,
-                      ),
-                      EntityFact(
-                        i18n.t('common.amount'),
-                        formatAmount(job.totalPrice, currency: job.currency ?? 'OMR'),
-                        icon: Icons.payments_outlined,
-                      ),
-                      EntityFact(
-                        i18n.t('job.trips'),
-                        i18n.t('job.tripsCount', {'count': '${job.trips.length}'}),
-                        icon: Icons.alt_route_outlined,
-                      ),
-                      if (job.shipment != null)
-                        EntityFact(
-                          i18n.t('paymentContract.title'),
-                          job.shipment!.paymentTerms.label(i18n),
-                          icon: Icons.event_available_outlined,
-                        ),
-                    ],
-                    footer: from != null || to != null
-                        ? AppRoutePanel(
-                            fromLabel: i18n.t('common.pickup'),
-                            toLabel: i18n.t('common.delivery'),
-                            from: from ?? '—',
-                            to: to ?? '—',
-                          )
-                        : null,
-                  ),
-                ),
-                  secondary: Column(
-                    children: [
+                AppAppear(index: 0, child: progress),
+                const SizedBox(height: 16),
                 AppAppear(
                   index: 1,
-                  child: SectionCard(
-                    title: i18n.t('job.progress'),
-                    icon: Icons.bolt_rounded,
-                    child: AppStatusStepper(
-                      steps: [
-                        AppStepItem(
-                          id: 'pending_dispatch',
-                          label: i18n.status('pending_dispatch'),
-                          icon: Icons.hourglass_top_rounded,
-                        ),
-                        AppStepItem(
-                          id: 'in_progress',
-                          label: i18n.status('in_progress'),
-                          icon: Icons.local_shipping_rounded,
-                        ),
-                        AppStepItem(
-                          id: 'completed',
-                          label: i18n.status('completed'),
-                          icon: Icons.verified_rounded,
-                        ),
-                      ],
-                      currentId: _jobStep(job.status),
-                      failed: job.status == 'cancelled',
-                    ),
-                  ),
-                ),
-                    ],
-                  ),
+                  child: payment == null
+                      ? summary
+                      : DesktopPair(primary: summary, secondary: payment),
                 ),
                 const SizedBox(height: 16),
                 AppAppear(
@@ -187,17 +191,6 @@ class JobDetailScreen extends ConsumerWidget {
                           ),
                   ),
                 ),
-                if (job.shipment != null) ...[
-                  const SizedBox(height: 16),
-                  AppAppear(
-                    index: 3,
-                    child: SectionCard(
-                      title: i18n.t('paymentContract.title'),
-                      icon: Icons.payments_outlined,
-                      child: PaymentTermsReadout(i18n: i18n, terms: job.shipment!.paymentTerms),
-                    ),
-                  ),
-                ],
                 if (job.shipment != null || job.payableInvoices.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   AppAppear(

@@ -8,6 +8,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_glyph.dart';
 import '../../../../shared/widgets/app_list_card.dart';
+import '../../../../shared/widgets/page_scaffold.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../quotations/data/quotation_model.dart';
 import '../../data/quantity_units.dart';
@@ -185,8 +186,6 @@ class ShipmentSummaryPanel extends StatelessWidget {
               StatusBadge(status: status, label: i18n.status(status)),
             ],
           ),
-          const SizedBox(height: 22),
-          _StatusTrack(i18n: i18n, shipment: shipment, locale: locale),
           if (message.isNotEmpty) ...[
             const SizedBox(height: 18),
             Text(
@@ -252,27 +251,10 @@ class ShipmentRecordLayout extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth < shipmentDetailSplitWidth) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  request,
-                  const SizedBox(height: 16),
-                  cargo,
-                ],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: request),
-                const SizedBox(width: 16),
-                Expanded(child: cargo),
-              ],
-            );
-          },
+        DesktopPair(
+          primary: request,
+          secondary: cargo,
+          splitAt: shipmentDetailSplitWidth,
         ),
         const SizedBox(height: 16),
         _RouteSheet(i18n: i18n, shipment: shipment),
@@ -405,8 +387,8 @@ class _RequestSheet extends StatelessWidget {
     final reference = shipment.reference?.trim();
 
     return _Sheet(
+      key: const Key('shipment-request-card'),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SheetHead(title: i18n.t('shipment.requestDetails'), icon: Icons.article_outlined),
@@ -459,8 +441,8 @@ class _CargoSheet extends StatelessWidget {
     final notes = shipment.notes?.trim();
 
     return _Sheet(
+      key: const Key('shipment-cargo-card'),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SheetHead(title: i18n.t('shipment.cargo'), icon: Icons.inventory_2_outlined),
@@ -518,6 +500,7 @@ class _RouteSheet extends StatelessWidget {
     );
 
     return _Sheet(
+      key: const Key('shipment-route-card'),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -656,7 +639,7 @@ class _QuotationRow extends StatelessWidget {
 }
 
 class _Sheet extends StatelessWidget {
-  const _Sheet({required this.child, this.wash = false});
+  const _Sheet({super.key, required this.child, this.wash = false});
 
   final Widget child;
   final bool wash;
@@ -837,6 +820,26 @@ class _FactLine extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ShipmentStageCard extends StatelessWidget {
+  const ShipmentStageCard({
+    super.key,
+    required this.i18n,
+    required this.shipment,
+    required this.locale,
+  });
+
+  final I18nBundle i18n;
+  final ShipmentRequest shipment;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Sheet(
+      child: _StatusTrack(i18n: i18n, shipment: shipment, locale: locale),
     );
   }
 }

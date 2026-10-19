@@ -127,6 +127,15 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
               children: [
                 AppAppear(
                   index: 0,
+                  child: ShipmentStageCard(
+                    i18n: i18n,
+                    shipment: shipment,
+                    locale: locale,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppAppear(
+                  index: 1,
                   child: ShipmentSummaryPanel(
                     i18n: i18n,
                     shipment: shipment,
@@ -147,7 +156,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppAppear(
-                  index: 1,
+                  index: 2,
                   child: ShipmentRecordLayout(i18n: i18n, shipment: shipment),
                 ),
                 if (shipment.platformOffer != null &&

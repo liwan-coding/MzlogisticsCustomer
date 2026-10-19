@@ -192,15 +192,38 @@ class DesktopPair extends StatelessWidget {
             ],
           );
         }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: 7, child: primary),
-            SizedBox(width: gap),
-            Expanded(flex: 5, child: secondary),
-          ],
+        return EqualCardRow(
+          gap: gap,
+          children: [primary, secondary],
         );
       },
+    );
+  }
+}
+
+/// Side-by-side cards that share one width and one height.
+class EqualCardRow extends StatelessWidget {
+  const EqualCardRow({
+    super.key,
+    required this.children,
+    this.gap = 16,
+  });
+
+  final List<Widget> children;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < children.length; index++) ...[
+            if (index > 0) SizedBox(width: gap),
+            Expanded(child: children[index]),
+          ],
+        ],
+      ),
     );
   }
 }

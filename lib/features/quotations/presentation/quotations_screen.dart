@@ -219,25 +219,35 @@ class _QuotationsScreenState extends ConsumerState<QuotationsScreen> {
                     builder: (context, constraints) {
                       const gap = 16.0;
                       final columns = constraints.maxWidth >= 980 ? 3 : 2;
-                      final width =
-                          (constraints.maxWidth - gap * (columns - 1)) / columns;
-                      return Wrap(
-                        spacing: gap,
-                        runSpacing: gap,
+                      final rows = (visible.length / columns).ceil();
+                      return Column(
                         children: [
-                          for (final quotation in visible)
-                            SizedBox(
-                              width: width,
-                              child: _QuotationCard(
-                                quotation: quotation,
-                                i18n: i18n,
-                                accepting: _accepting,
-                                bestPrice: _isBestPrice(items, quotation),
-                                onAccept: () => _accept(quotation),
-                                onOpen: () =>
-                                    context.push('/quotations/${quotation.id}'),
-                              ),
+                          for (var row = 0; row < rows; row++) ...[
+                            if (row > 0) const SizedBox(height: gap),
+                            EqualCardRow(
+                              gap: gap,
+                              children: [
+                                for (var column = 0; column < columns; column++)
+                                  () {
+                                    final index = row * columns + column;
+                                    if (index >= visible.length) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final quotation = visible[index];
+                                    return _QuotationCard(
+                                      quotation: quotation,
+                                      i18n: i18n,
+                                      accepting: _accepting,
+                                      bestPrice: _isBestPrice(items, quotation),
+                                      onAccept: () => _accept(quotation),
+                                      onOpen: () => context.push(
+                                        '/quotations/${quotation.id}',
+                                      ),
+                                    );
+                                  }(),
+                              ],
                             ),
+                          ],
                         ],
                       );
                     },

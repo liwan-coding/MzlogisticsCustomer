@@ -10,6 +10,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/i18n/i18n_controller.dart';
 import '../../../../core/maps/google_maps_links.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/bidi_text.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -32,80 +33,64 @@ class TripBoard extends StatelessWidget {
     final info = _InfoCard(i18n: i18n, trip: trip);
     final route = _RouteCard(i18n: i18n, trip: trip, wide: wide);
     final quantities = _QuantityCard(i18n: i18n, trip: trip);
-    final stops = _StopsCard(i18n: i18n, trip: trip);
-    final extra = _extraCard(context);
-
-    if (!wide) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          stepper,
-          SizedBox(height: gap),
-          info,
-          SizedBox(height: gap),
-          route,
-          SizedBox(height: gap),
-          quantities,
-          SizedBox(height: gap),
-          stops,
-          if (extra != null) ...[
-            SizedBox(height: gap),
-            extra,
-          ],
-        ],
-      );
-    }
+    final code = trip.otpCode?.trim();
+    final otp = (code != null && code.isNotEmpty) ? _OtpCard(i18n: i18n, code: code) : null;
+    final notes = _notesCard(context);
+    final pair = wide
+        ? IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: info),
+                SizedBox(width: gap),
+                Expanded(child: route),
+              ],
+            ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              info,
+              SizedBox(height: gap),
+              route,
+            ],
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         stepper,
+        if (otp != null) ...[
+          SizedBox(height: gap),
+          otp,
+        ],
         SizedBox(height: gap),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: 5, child: info),
-            SizedBox(width: gap),
-            Expanded(flex: 8, child: route),
-          ],
-        ),
+        pair,
         SizedBox(height: gap),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: extra == null ? 1 : 5, child: quantities),
-            SizedBox(width: gap),
-            Expanded(flex: extra == null ? 1 : 4, child: stops),
-            if (extra != null) ...[
-              SizedBox(width: gap),
-              Expanded(flex: 3, child: extra),
-            ],
-          ],
-        ),
+        quantities,
+        if (notes != null) ...[
+          SizedBox(height: gap),
+          notes,
+        ],
       ],
     );
   }
 
-  Widget? _extraCard(BuildContext context) {
-    final code = trip.otpCode?.trim();
-    if (code != null && code.isNotEmpty) {
-      return _OtpCard(i18n: i18n, code: code);
-    }
+  Widget? _notesCard(BuildContext context) {
     final notes = trip.proofOfDelivery?.notes?.trim();
-    if (notes != null && notes.isNotEmpty) {
-      return _Panel(
-        title: i18n.t('common.notes'),
-        child: Text(
-          notes,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.ink,
-                height: 1.45,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      );
-    }
-    return null;
+    if (notes == null || notes.isEmpty) return null;
+    return _Panel(
+      title: i18n.t('common.notes'),
+      child: _BidiValue(
+        notes,
+        maxLines: 6,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.ink,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
   }
 }
 
@@ -374,6 +359,7 @@ class _InfoCard extends StatelessWidget {
     ];
 
     return _Panel(
+      key: const Key('trip-info-card'),
       title: i18n.t('trip.info'),
       child: Column(
         children: [
@@ -469,11 +455,10 @@ class _FactRow extends StatelessWidget {
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
               child: fact.badge ??
-                  Text(
+                  _BidiValue(
                     fact.value,
-                    textAlign: TextAlign.end,
+                    align: TextAlign.end,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: text.bodyMedium?.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700),
                   ),
             ),
@@ -493,84 +478,39 @@ class _RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final from = _place(trip.pickupCity, trip.pickupAddress);
-    final to = _place(trip.deliveryCity, trip.deliveryAddress);
-    final locale = i18n.locale.languageCode;
-    final eta = trip.etaAt == null ? null : formatDateTime(trip.etaAt, locale: locale);
-
     return _Panel(
-      title: i18n.t('shipment.route'),
+      key: const Key('trip-route-card'),
+      title: i18n.t('trip.stops'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final mapWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 360.0;
-                return SizedBox(
-                  width: mapWidth,
-                  height: wide ? 280 : 200,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: _RouteMap(trip: trip)),
-                      if (_hasAnyPoint(trip))
-                        PositionedDirectional(
-                          top: 12,
-                          end: 12,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (trip.pickupLat != null && trip.pickupLng != null)
-                                _MapLink(
-                                  label: i18n.t('trip.mapPickup'),
-                                  iconColor: AppColors.orange,
-                                  maxWidth: mapWidth * 0.46,
-                                  onPressed: () => _openPoint(trip.pickupLat!, trip.pickupLng!),
-                                ),
-                              if (trip.pickupLat != null &&
-                                  trip.pickupLng != null &&
-                                  trip.deliveryLat != null &&
-                                  trip.deliveryLng != null)
-                                const SizedBox(height: 8),
-                              if (trip.deliveryLat != null && trip.deliveryLng != null)
-                                _MapLink(
-                                  label: i18n.t('trip.mapDelivery'),
-                                  iconColor: AppColors.success,
-                                  maxWidth: mapWidth * 0.46,
-                                  onPressed: () => _openPoint(trip.deliveryLat!, trip.deliveryLng!),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+            child: SizedBox(
+              height: wide ? 280 : 200,
+              child: _RouteMap(trip: trip),
             ),
           ),
-          if ((from != null && to != null) || eta != null) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (eta != null)
-                  _RouteChip(
-                    icon: Icons.schedule_outlined,
-                    label: i18n.t('common.eta'),
-                    value: eta,
-                  ),
-                if (from != null && to != null)
-                  _RouteChip(
-                    icon: Icons.route_outlined,
-                    label: i18n.t('shipment.route'),
-                    value: '$from → $to',
-                  ),
-              ],
-            ),
-          ],
+          const SizedBox(height: 8),
+          _Stop(
+            label: i18n.t('common.pickup'),
+            place: _place(trip.pickupCity, trip.pickupAddress) ?? i18n.t('common.notAvailable'),
+            point: _point(trip.pickupLat, trip.pickupLng),
+            color: AppColors.orange,
+            onOpen: trip.pickupLat == null || trip.pickupLng == null
+                ? null
+                : () => _openPoint(trip.pickupLat!, trip.pickupLng!),
+          ),
+          const Divider(height: 1),
+          _Stop(
+            label: i18n.t('common.delivery'),
+            place: _place(trip.deliveryCity, trip.deliveryAddress) ?? i18n.t('common.notAvailable'),
+            point: _point(trip.deliveryLat, trip.deliveryLng),
+            color: AppColors.success,
+            onOpen: trip.deliveryLat == null || trip.deliveryLng == null
+                ? null
+                : () => _openPoint(trip.deliveryLat!, trip.deliveryLng!),
+          ),
         ],
       ),
     );
@@ -665,111 +605,6 @@ class _RouteMap extends StatelessWidget {
   }
 }
 
-class _MapLink extends StatelessWidget {
-  const _MapLink({
-    required this.label,
-    required this.onPressed,
-    required this.iconColor,
-    required this.maxWidth,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-  final Color iconColor;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      elevation: 2,
-      shadowColor: const Color(0x22101A2B),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.location_on_outlined, size: 16, color: iconColor),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RouteChip extends StatelessWidget {
-  const _RouteChip({
-    required this.icon,
-    required this.label,
-    this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.mist,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: AppColors.orange),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.labelSmall?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall?.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _QuantityCard extends StatelessWidget {
   const _QuantityCard({required this.i18n, required this.trip});
 
@@ -779,6 +614,7 @@ class _QuantityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Panel(
+      key: const Key('trip-quantities-card'),
       title: i18n.t('trip.quantities'),
       child: Row(
         children: [
@@ -815,6 +651,17 @@ class _Metric extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Row(
       children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.mist,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.muted),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,58 +673,15 @@ class _Metric extends StatelessWidget {
                 style: text.labelSmall?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
-              Text(
+              _BidiValue(
                 value,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: AppColors.ink),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.mist,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 18, color: AppColors.muted),
-        ),
       ],
-    );
-  }
-}
-
-class _StopsCard extends StatelessWidget {
-  const _StopsCard({required this.i18n, required this.trip});
-
-  final I18nBundle i18n;
-  final Trip trip;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Panel(
-      title: i18n.t('trip.stops'),
-      child: Column(
-        children: [
-          _Stop(
-            label: i18n.t('common.pickup'),
-            place: _place(trip.pickupCity, trip.pickupAddress) ?? i18n.t('common.notAvailable'),
-            point: _point(trip.pickupLat, trip.pickupLng),
-            color: AppColors.orange,
-          ),
-          const SizedBox(height: 14),
-          _Stop(
-            label: i18n.t('common.delivery'),
-            place: _place(trip.deliveryCity, trip.deliveryAddress) ?? i18n.t('common.notAvailable'),
-            point: _point(trip.deliveryLat, trip.deliveryLng),
-            color: AppColors.success,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -888,45 +692,62 @@ class _Stop extends StatelessWidget {
     required this.place,
     required this.point,
     required this.color,
+    this.onOpen,
   });
 
   final String label;
   final String place;
   final String? point;
   final Color color;
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.location_on, color: color, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: text.labelSmall?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                place,
-                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
-              ),
-              if (point != null) ...[
-                const SizedBox(height: 2),
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.location_on, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  point!,
-                  style: text.labelSmall?.copyWith(color: AppColors.muted),
+                  label,
+                  style: text.labelSmall?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w700),
                 ),
+                const SizedBox(height: 2),
+                _BidiValue(
+                  place,
+                  maxLines: 2,
+                  style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
+                ),
+                if (point != null) ...[
+                  const SizedBox(height: 2),
+                  _BidiValue(
+                    point!,
+                    maxLines: 1,
+                    style: text.labelSmall?.copyWith(color: AppColors.muted),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+          if (onOpen != null) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.open_in_new, size: 16, color: AppColors.muted),
+          ],
+        ],
+      ),
+    );
+    if (onOpen == null) return row;
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(10),
+      child: row,
     );
   }
 }
@@ -939,45 +760,131 @@ class _OtpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hint = Text(
+      i18n.t('trip.otpHint'),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.muted,
+            height: 1.45,
+            fontWeight: FontWeight.w600,
+          ),
+    );
+    final copy = AppButton(
+      label: i18n.t('trip.otpCopy'),
+      icon: Icons.copy_outlined,
+      variant: AppButtonVariant.secondary,
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: code));
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(i18n.t('trip.otpCopied'))),
+        );
+      },
+    );
+
     return _Panel(
       title: i18n.t('trip.otp'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SelectableText(
-            code,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final sideBySide = constraints.maxWidth >= 680;
+          final marks = _OtpMarks(code: code);
+          if (!sideBySide) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                marks,
+                const SizedBox(height: 12),
+                hint,
+                const SizedBox(height: 14),
+                copy,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                fit: FlexFit.loose,
+                child: marks,
+              ),
+              const SizedBox(width: 20),
+              Expanded(child: hint),
+              const SizedBox(width: 16),
+              copy,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _OtpMarks extends StatelessWidget {
+  const _OtpMarks({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    final glyphs = code.split('');
+    return Semantics(
+      key: const Key('trip-delivery-code'),
+      label: code,
+      container: true,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < glyphs.length; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              _OtpDigit(glyph: glyphs[index]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OtpDigit extends StatelessWidget {
+  const _OtpDigit({required this.glyph});
+
+  final String glyph;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 54,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.amberSoft,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.28)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            glyph,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 4,
+                  fontSize: 26,
+                  height: 1,
                   color: AppColors.ink,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            i18n.t('trip.otpHint'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          AppButton(
-            label: i18n.t('trip.otpCopy'),
-            icon: Icons.copy_outlined,
-            variant: AppButtonVariant.secondary,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: code));
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(i18n.t('trip.otpCopied'))),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _Panel extends StatelessWidget {
-  const _Panel({required this.child, this.title});
+  const _Panel({super.key, required this.child, this.title});
 
   final String? title;
   final Widget child;
@@ -1045,14 +952,51 @@ String? _point(double? lat, double? lng) {
   return formatCoordinates(lat, lng);
 }
 
-bool _hasAnyPoint(Trip trip) {
-  return (trip.pickupLat != null && trip.pickupLng != null) ||
-      (trip.deliveryLat != null && trip.deliveryLng != null);
-}
-
 Future<void> _openPoint(double lat, double lng) {
   return launchUrl(
     GoogleMapsLinks.view(lat: lat, lng: lng),
     mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
   );
+}
+
+class _BidiValue extends StatelessWidget {
+  const _BidiValue(
+    this.value, {
+    required this.style,
+    this.maxLines = 1,
+    this.align = TextAlign.start,
+  });
+
+  final String value;
+  final TextStyle? style;
+  final int maxLines;
+  final TextAlign align;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      bidiIsolate(value),
+      textDirection: _scriptDirection(value),
+      textAlign: align,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
+  }
+}
+
+/// Latin names and codes stay left-to-right. Arabic names stay right-to-left.
+TextDirection _scriptDirection(String value) {
+  final arabic = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
+  final latin = RegExp(r'[A-Za-z]');
+  final hasArabic = arabic.hasMatch(value);
+  final hasLatin = latin.hasMatch(value);
+  if (hasArabic && !hasLatin) return TextDirection.rtl;
+  if (hasLatin && !hasArabic) return TextDirection.ltr;
+  if (hasArabic && hasLatin) {
+    final firstArabic = arabic.firstMatch(value)!.start;
+    final firstLatin = latin.firstMatch(value)!.start;
+    return firstArabic < firstLatin ? TextDirection.rtl : TextDirection.ltr;
+  }
+  return TextDirection.ltr;
 }

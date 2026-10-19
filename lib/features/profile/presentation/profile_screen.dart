@@ -57,34 +57,23 @@ class ProfileScreen extends ConsumerWidget {
               child: ProfileIdentityHeader(i18n: i18n, user: user),
             ),
             const SizedBox(height: gap),
-            if (wide)
+            if (wide) ...[
               AppAppear(
                 index: 1,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          account,
-                          const SizedBox(height: gap),
-                          organization,
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          contact,
-                          const SizedBox(height: gap),
-                          settings,
-                        ],
-                      ),
-                    ),
-                  ],
+                child: EqualCardRow(
+                  gap: 16,
+                  children: [account, contact],
                 ),
-              )
+              ),
+              const SizedBox(height: gap),
+              AppAppear(
+                index: 2,
+                child: EqualCardRow(
+                  gap: 16,
+                  children: [organization, settings],
+                ),
+              ),
+            ]
             else ...[
               AppAppear(index: 1, child: account),
               const SizedBox(height: gap),

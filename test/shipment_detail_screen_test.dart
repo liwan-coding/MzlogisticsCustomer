@@ -42,6 +42,7 @@ void main() {
       _english,
       _shipment(
         status: 'published',
+        offerSelectionMode: 'customer',
         quotations: const [
           Quotation(
             id: 3,
@@ -64,11 +65,13 @@ void main() {
     );
 
     expect(find.textContaining('From'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Coastal Freight'), 300);
     expect(find.text('Coastal Freight'), findsOneWidget);
     expect(find.byKey(const Key('shipment-compare')), findsOneWidget);
     expect(find.byKey(const Key('shipment-publish')), findsNothing);
     expect(tester.takeException(), isNull);
 
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.ensureVisible(find.byKey(const Key('shipment-compare')));
     await tester.tap(find.byKey(const Key('shipment-compare')));
     await tester.pumpAndSettle();
@@ -82,6 +85,7 @@ void main() {
       _arabic,
       _shipment(
         status: 'published',
+        offerSelectionMode: 'customer',
         cargoType: 'أسمنت بورتلاندي سائب لشحنة ساحلية طويلة',
         quotations: const [
           Quotation(
@@ -125,6 +129,7 @@ void main() {
 ShipmentRequest _shipment({
   required String status,
   String cargoType = 'Cement',
+  String offerSelectionMode = 'admin',
   List<Quotation> quotations = const [],
 }) {
   return ShipmentRequest(
@@ -144,6 +149,7 @@ ShipmentRequest _shipment({
     requiredDate: DateTime.utc(2026, 10, 2),
     notes: 'Site opens at 7',
     status: status,
+    offerSelectionMode: offerSelectionMode,
     quotations: quotations,
     quotationsCount: quotations.length,
     createdAt: DateTime.utc(2026, 9, 20, 8),

@@ -147,13 +147,11 @@ class _ShipmentsListScreenState extends ConsumerState<ShipmentsListScreen> {
                   for (var index = 0; index < count; index++)
                     Padding(
                       padding: EdgeInsets.only(bottom: index == count - 1 ? 0 : 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: EqualCardRow(
+                        gap: 12,
                         children: [
-                          for (var column = 0; column < columns; column++) ...[
-                            if (column > 0) const SizedBox(width: 12),
-                            Expanded(child: _shipmentCell(i18n, visible, index * columns + column)),
-                          ],
+                          for (var column = 0; column < columns; column++)
+                            _shipmentCell(i18n, visible, index * columns + column),
                         ],
                       ),
                     ),
