@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/i18n/i18n_controller.dart';
+import 'core/push/push_coordinator.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/widgets/error_state.dart';
@@ -15,6 +16,7 @@ class MzCustomerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nControllerProvider);
     final router = ref.watch(routerProvider);
+    ref.watch(pushCoordinatorProvider);
     const fallback = I18nBundle(locale: Locale('en'), strings: {});
     final bundle = i18n.asData?.value ?? fallback;
 

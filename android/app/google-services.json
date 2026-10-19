@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "349254917417",
+    "project_id": "movex-c49cb",
+    "storage_bucket": "movex-c49cb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:349254917417:android:3190919e85bb2830352b38",
+        "android_client_info": {
+          "package_name": "com.example.mz_logistics_customer_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB43pPd94WFELzc-OGsV9405XUlpkf79AM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

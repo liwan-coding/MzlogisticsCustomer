@@ -22,6 +22,69 @@ void main() {
     expect(find.text('المبالغ المدفوعة'), findsNothing);
     expect(find.text('طلب شحن جديد'), findsWidgets);
     expect(find.text('3'), findsWidgets);
+    final heroButton = find.ancestor(
+      of: find.text('طلب شحن جديد').first,
+      matching: find.byType(FilledButton),
+    );
+    final heroSize = tester.getSize(heroButton);
+    expect(heroSize.width, lessThan(310));
+    expect(heroSize.height, inInclusiveRange(44, 52));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('phone hero button scrolls away with the hero', (tester) async {
+    await _pumpHome(
+      tester,
+      const Size(360, 800),
+      _english,
+      reduceMotion: false,
+    );
+    final button = find.ancestor(
+      of: find.text('New shipment request').first,
+      matching: find.byType(FilledButton),
+    );
+    final before = tester.getTopLeft(button).dy;
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(140);
+    await tester.pump();
+    final after = tester.getTopLeft(button).dy;
+    expect(before - after, closeTo(140, 6));
+  });
+
+  testWidgets('phone fleet peeks the fourth truck', (tester) async {
+    await _pumpHome(
+      tester,
+      const Size(360, 800),
+      _english,
+      truckTypes: const [
+        TruckTypeOption(code: 'flatbed', name: 'Flatbed', nameAr: 'سطحة'),
+        TruckTypeOption(code: 'reefer', name: 'Reefer', nameAr: 'مبرد'),
+        TruckTypeOption(code: 'trailer', name: 'Trailer', nameAr: 'تريلا'),
+        TruckTypeOption(code: 'tipper', name: 'Tipper', nameAr: 'قلاب'),
+      ],
+    );
+    await tester.scrollUntilVisible(
+      find.text('Choose a type to start a shipment request'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+
+    final width = tester.view.physicalSize.width;
+    Rect itemRect(String name) {
+      final label = find.textContaining(name);
+      final item = find.ancestor(of: label, matching: find.byType(InkWell));
+      return tester.getRect(item);
+    }
+
+    final third = itemRect('Trailer');
+    final fourth = itemRect('Tipper');
+    expect(third.left, greaterThanOrEqualTo(0));
+    expect(third.right, lessThanOrEqualTo(width + 1));
+    expect(fourth.left, lessThan(width));
+    expect(fourth.right, greaterThan(width + 8));
     expect(tester.takeException(), isNull);
   });
 
@@ -325,6 +388,7 @@ Future<void> _pumpHome(
   Size size,
   I18nBundle bundle, {
   double textScale = 1,
+  bool reduceMotion = true,
   List<ShipmentRequest> shipments = const [],
   List<TruckTypeOption> truckTypes = const [],
   Trip? liveTrip,
@@ -385,7 +449,7 @@ Future<void> _pumpHome(
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(textScale),
-              disableAnimations: true,
+              disableAnimations: reduceMotion,
             ),
             child: child ?? const SizedBox.shrink(),
           );

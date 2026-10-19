@@ -40,15 +40,30 @@ EdgeInsets _sectionPadding(BuildContext context) {
   return EdgeInsets.fromLTRB(inset, _sectionGap(context), inset, 0);
 }
 
-TextStyle? _homeTitle(BuildContext context, {FontWeight weight = FontWeight.w700}) {
+TextStyle? _homeTitle(
+  BuildContext context, {
+  FontWeight weight = FontWeight.w700,
+}) {
   final text = Theme.of(context).textTheme;
   if (context.isDesktop) {
-    return text.headlineSmall?.copyWith(color: _ink, fontWeight: weight, height: 1.15);
+    return text.headlineSmall?.copyWith(
+      color: _ink,
+      fontWeight: weight,
+      height: 1.15,
+    );
   }
   if (context.isCompact) {
-    return text.titleMedium?.copyWith(color: _ink, fontWeight: weight, height: 1.25);
+    return text.titleMedium?.copyWith(
+      color: _ink,
+      fontWeight: weight,
+      height: 1.25,
+    );
   }
-  return text.titleLarge?.copyWith(color: _ink, fontWeight: weight, height: 1.2);
+  return text.titleLarge?.copyWith(
+    color: _ink,
+    fontWeight: weight,
+    height: 1.2,
+  );
 }
 
 BoxDecoration _homePanel() {
@@ -366,6 +381,9 @@ class _HeroMotion extends StatelessWidget {
             child: Transform.scale(scale: 1.38, child: child),
           );
         }
+        // On a short phone hero the lag leaves the button floating after the
+        // photograph and the road have already scrolled away.
+        if (!context.isDesktop) return child!;
         final fade = (1 - offset / 220).clamp(0.0, 1.0);
         return Opacity(
           opacity: fade,
@@ -403,7 +421,9 @@ class _Hero extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: wide ? 520 : (compact ? 320 : 380)),
+        constraints: BoxConstraints(
+          minHeight: wide ? 520 : (compact ? 320 : 380),
+        ),
         child: Stack(
           children: [
             Positioned.fill(
@@ -497,15 +517,26 @@ class _Hero extends StatelessWidget {
                               fontSize: wide ? 20 : (compact ? 15 : 16),
                             ),
                           ),
-                          SizedBox(height: wide ? 40 : (compact ? 20 : 28)),
-                          _OrangeButton(
-                            label: i18n.t('home.newShipment'),
-                            icon: Icons.add,
-                            pulse: true,
-                            large: wide,
-                            expanded: !wide,
-                            onPressed: () => context.push('/shipments/new'),
-                          ),
+                          SizedBox(height: wide ? 40 : (compact ? 16 : 22)),
+                          wide
+                              ? _OrangeButton(
+                                  label: i18n.t('home.newShipment'),
+                                  icon: Icons.add,
+                                  pulse: true,
+                                  large: true,
+                                  onPressed: () =>
+                                      context.push('/shipments/new'),
+                                )
+                              : FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: _OrangeButton(
+                                    label: i18n.t('home.newShipment'),
+                                    icon: Icons.add,
+                                    pulse: true,
+                                    onPressed: () =>
+                                        context.push('/shipments/new'),
+                                  ),
+                                ),
                         ],
                       ),
                     ),
@@ -610,20 +641,21 @@ class _EdgeRoadPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = road;
     final metric = path.computeMetrics().single;
+    final scale = _heroMarkScale(size.width);
     canvas.drawPath(
       path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 18
+        ..strokeWidth = 18 * scale
         ..strokeCap = StrokeCap.round
         ..color = const Color(0x59000000)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 7 * scale),
     );
     canvas.drawPath(
       path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 13
+        ..strokeWidth = 13 * scale
         ..strokeCap = StrokeCap.round
         ..color = const Color(0xF0121822),
     );
@@ -631,31 +663,41 @@ class _EdgeRoadPainter extends CustomPainter {
       path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.15
+        ..strokeWidth = 1.15 * scale
         ..strokeCap = StrokeCap.round
         ..color = const Color(0xB3FFFFFF),
     );
 
     if (showPins) {
-      _paintPin(canvas, metric.getTangentForOffset(0)!.position);
+      _paintPin(canvas, metric.getTangentForOffset(0)!.position, scale);
       _paintPin(
         canvas,
         metric.getTangentForOffset(math.max(0, metric.length - 0.4))!.position,
+        scale,
       );
     }
 
     final fadeIn = (progress / 0.07).clamp(0.0, 1.0).toDouble();
     final fadeOut = ((1 - progress) / 0.07).clamp(0.0, 1.0).toDouble();
-    final pose = _pose(metric, progress);
-    _paintTruck(canvas, pose.$1, pose.$2, math.min(fadeIn, fadeOut));
+    final pose = _pose(metric, progress, scale);
+    _paintTruck(canvas, pose.$1, pose.$2, math.min(fadeIn, fadeOut), scale);
   }
 
-  (Offset, double) _pose(PathMetric metric, double t) {
+  /// Desktop keeps the drawn truck. Phones use a smaller mark so it sits
+  /// on the shallower road instead of dominating the hero.
+  double _heroMarkScale(double width) {
+    if (width >= 1024) return 1;
+    if (width < 420) return 0.5;
+    if (width < 768) return 0.62;
+    return 0.8;
+  }
+
+  (Offset, double) _pose(PathMetric metric, double t, double scale) {
     final length = metric.length;
     final limit = math.max(0.0, length - 0.4);
     final distance = (length * t.clamp(0.0, 1.0)).clamp(0.0, limit).toDouble();
     final center = metric.getTangentForOffset(distance)!.position;
-    const span = 22.0;
+    final span = 22.0 * scale;
     final back = metric
         .getTangentForOffset((distance - span).clamp(0.0, limit).toDouble())!
         .position;
@@ -669,16 +711,16 @@ class _EdgeRoadPainter extends CustomPainter {
     return (center, angle);
   }
 
-  void _paintPin(Canvas canvas, Offset point) {
+  void _paintPin(Canvas canvas, Offset point, double scale) {
     canvas.drawCircle(
       point,
-      10,
+      10 * scale,
       Paint()
         ..color = _orange.withValues(alpha: 0.32)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * scale),
     );
-    canvas.drawCircle(point, 6.2, Paint()..color = Colors.white);
-    canvas.drawCircle(point, 4.4, Paint()..color = _orange);
+    canvas.drawCircle(point, 6.2 * scale, Paint()..color = Colors.white);
+    canvas.drawCircle(point, 4.4 * scale, Paint()..color = _orange);
   }
 
   void _paintTruck(
@@ -686,6 +728,7 @@ class _EdgeRoadPainter extends CustomPainter {
     Offset position,
     double angle,
     double opacity,
+    double scale,
   ) {
     if (opacity <= 0) return;
     Color tone(Color color) => color.withValues(alpha: color.a * opacity);
@@ -694,6 +737,7 @@ class _EdgeRoadPainter extends CustomPainter {
     canvas.rotate(angle);
     // Wheels stay on the road. The body stays on the photograph side.
     if (math.cos(angle) < 0) canvas.scale(1, -1);
+    canvas.scale(scale);
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(0, 1), width: 72, height: 9),
       Paint()
@@ -917,8 +961,14 @@ class _FleetStripState extends State<_FleetStrip>
               ? constraints.maxWidth
               : 320.0;
           const gap = 10.0;
-          final visible = viewport < 400 ? 2.7 : 3.4;
-          final size = (viewport / visible - gap).clamp(72.0, 104.0);
+          // Three trucks in full, and a slice of the fourth so the row can scroll.
+          const shown = 3.34;
+          const smallShare = 0.88;
+          final averageItem = viewport / shown - gap;
+          final size = (averageItem / ((1 + smallShare) / 2)).clamp(
+            74.0,
+            100.0,
+          );
           return _strip(
             size: size,
             small: size * 0.88,
@@ -967,7 +1017,7 @@ class _FleetStripState extends State<_FleetStrip>
                 ? 0.0
                 : -bob * (prominent ? 8 : 5);
             final name = type.displayName(widget.locale);
-            final itemWidth = math.max(circle, widget.wide ? circle + 12 : 76.0);
+            final itemWidth = widget.wide ? circle + 12 : circle;
             return SizedBox(
               width: itemWidth,
               child: Align(
@@ -1532,7 +1582,9 @@ class _VerticalJourney extends StatelessWidget {
           children: [
             for (var index = 0; index < steps.length; index++)
               Padding(
-                padding: EdgeInsets.only(bottom: index == steps.length - 1 ? 0 : (compact ? 10 : 14)),
+                padding: EdgeInsets.only(
+                  bottom: index == steps.length - 1 ? 0 : (compact ? 10 : 14),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2659,11 +2711,13 @@ class _OrangeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = large ? 24.0 : 18.0;
+    final iconSize = large ? 24.0 : 16.0;
+    final radius = large ? 16.0 : 10.0;
     final labelStyle = TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.w700,
       fontSize: large ? 18 : 14,
+      height: 1.2,
     );
     final child = Row(
       mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
@@ -2677,13 +2731,14 @@ class _OrangeButton extends StatelessWidget {
           Flexible(
             child: Text(
               label,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: labelStyle,
             ),
           )
         else
-          Text(label, style: labelStyle),
-        SizedBox(width: large ? 12 : 8),
+          Text(label, maxLines: 1, style: labelStyle),
+        SizedBox(width: large ? 12 : 6),
         Icon(Icons.arrow_forward, size: large ? 22 : 16, color: Colors.white),
       ],
     );
@@ -2692,13 +2747,14 @@ class _OrangeButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: _orange,
         foregroundColor: Colors.white,
-        minimumSize: large ? const Size(0, 64) : null,
+        minimumSize: Size(0, large ? 64 : 44),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         padding: EdgeInsets.symmetric(
-          horizontal: large ? 32 : 16,
-          vertical: large ? 20 : 14,
+          horizontal: large ? 28 : 14,
+          vertical: large ? 16 : 8,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(large ? 16 : 10),
+          borderRadius: BorderRadius.circular(radius),
         ),
       ),
       child: child,
@@ -2707,14 +2763,20 @@ class _OrangeButton extends StatelessWidget {
         ? SizedBox(width: double.infinity, child: button)
         : button;
     if (!pulse) return sized;
-    return _PulsingButton(child: sized);
+    return _PulsingButton(radius: radius, subtle: !large, child: sized);
   }
 }
 
 class _PulsingButton extends StatefulWidget {
-  const _PulsingButton({required this.child});
+  const _PulsingButton({
+    required this.child,
+    required this.radius,
+    this.subtle = false,
+  });
 
   final Widget child;
+  final double radius;
+  final bool subtle;
 
   @override
   State<_PulsingButton> createState() => _PulsingButtonState();
@@ -2761,8 +2823,10 @@ class _PulsingButtonState extends State<_PulsingButton>
       builder: (context, child) {
         final t = _pulse.value;
         final beat = math.sin(t * math.pi);
+        final grow = widget.subtle ? 0.08 : 0.28;
+        final lift = widget.subtle ? 0.015 : 0.045;
         return Transform.scale(
-          scale: 1 + 0.045 * beat,
+          scale: 1 + lift * beat,
           child: Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
@@ -2770,16 +2834,20 @@ class _PulsingButtonState extends State<_PulsingButton>
               Positioned.fill(
                 child: IgnorePointer(
                   child: Transform.scale(
-                    scale: 1 + 0.28 * t,
+                    scale: 1 + grow * t,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: _orange.withValues(alpha: 0.42 * (1 - t)),
+                        borderRadius: BorderRadius.circular(widget.radius),
+                        color: _orange.withValues(
+                          alpha: (widget.subtle ? 0.28 : 0.42) * (1 - t),
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: _orange.withValues(alpha: 0.35 * beat),
-                            blurRadius: 18,
-                            spreadRadius: 2,
+                            color: _orange.withValues(
+                              alpha: (widget.subtle ? 0.18 : 0.35) * beat,
+                            ),
+                            blurRadius: widget.subtle ? 8 : 18,
+                            spreadRadius: widget.subtle ? 0 : 2,
                           ),
                         ],
                       ),

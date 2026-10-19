@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/push/push_notifications.dart';
 import '../../../core/providers.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../shared/models/user.dart';
@@ -91,6 +92,7 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await PushNotifications.unregister();
     try {
       await _repo.logout();
     } catch (_) {

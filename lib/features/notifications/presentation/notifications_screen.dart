@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/i18n_controller.dart';
 import '../../../core/theme/app_colors.dart';
@@ -43,7 +44,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final query = _search.text.trim().toLowerCase();
     return items.where((item) {
       if (!_matches(item, _filter)) return false;
-      return matchesSearch(query, [item.title, item.body, item.type]);
+      return matchesSearch(query, [item.textTitle('ar'), item.textTitle('en'), item.textBody('ar'), item.textBody('en'), item.type]);
     }).toList();
   }
 
@@ -79,6 +80,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       _filter = _NotificationFilter.all;
       _search.clear();
     });
+  }
+
+  Future<void> _open(BuildContext context, AppNotification item) async {
+    final path = _notificationPath(item);
+    if (item.isUnread) {
+      await ref.read(notificationRepositoryProvider).markRead(item.id);
+      ref.invalidate(notificationsProvider);
+    }
+    if (path != null && context.mounted) {
+      context.push(path);
+    }
   }
 
   @override
@@ -135,13 +147,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               padding: EdgeInsets.zero,
               items: visible,
               itemBuilder: (context, item) {
+                final language = i18n.locale.languageCode;
+                final title = item.textTitle(language);
+                final body = item.textBody(language);
                 return AppListCard(
                   embedded: true,
                   highlighted: item.isUnread,
-                  title: item.title ?? i18n.t('notification.title'),
-                  subtitle: item.body,
-                  meta: formatDateTime(item.createdAt, locale: i18n.locale.languageCode),
-                  showChevron: false,
+                  title: title.isEmpty ? i18n.t('notification.title') : title,
+                  subtitle: body.isEmpty ? null : body,
+                  meta: formatDateTime(item.createdAt, locale: language),
+                  onTap: () => _open(context, item),
                   trailing: item.isUnread
                       ? IconButton(
                           tooltip: i18n.t('notification.markRead'),
@@ -167,5 +182,19 @@ bool _matches(AppNotification item, _NotificationFilter filter) {
     _NotificationFilter.all => true,
     _NotificationFilter.unread => item.isUnread,
     _NotificationFilter.read => !item.isUnread,
+  };
+}
+
+String? _notificationPath(AppNotification item) {
+  final id = item.targetId;
+  return switch (item.targetType) {
+    'shipment' || 'platform_offer' => id == null ? null : '/shipments/$id',
+    'quotation' => id == null ? null : '/quotations/$id',
+    'job' => id == null ? null : '/jobs/$id',
+    'trip' || 'pod' => id == null ? null : '/trips/$id',
+    'invoice' => '/invoices',
+    'payment' => '/payments',
+    'organization' => '/profile',
+    _ => null,
   };
 }

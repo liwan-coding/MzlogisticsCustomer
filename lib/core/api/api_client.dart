@@ -79,6 +79,10 @@ class ApiClient {
     return _send(() => _dio.patch<dynamic>(path, data: data));
   }
 
+  Future<ApiEnvelope> delete(String path, {Object? data}) {
+    return _send(() => _dio.delete<dynamic>(path, data: data));
+  }
+
   Future<Uint8List> getBytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(
