@@ -6,6 +6,7 @@ import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/invoices/presentation/invoices_screen.dart';
@@ -54,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final location = state.matchedLocation;
-      const authRoutes = {'/login', '/register', '/forgot-password'};
+      const authRoutes = {'/login', '/register', '/forgot-password', '/reset-password'};
       if (auth.status == AuthStatus.unknown) {
         if (location.startsWith('/payment')) return null;
         return location == '/splash' ? null : '/splash';
@@ -96,6 +97,12 @@ List<RouteBase> customerRoutes({
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) => ResetPasswordScreen(
+        email: state.uri.queryParameters['email'] ?? '',
+      ),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {

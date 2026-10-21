@@ -60,6 +60,20 @@ class AuthRepository {
     return _api.post('/auth/forgot-password', data: {'email': email});
   }
 
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) {
+    return _api.post('/auth/reset-password', data: {
+      'email': email,
+      'code': code,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    });
+  }
+
   AuthSession _session(Map<String, dynamic> json) {
     return AuthSession(
       token: asString(json['token']) ?? '',

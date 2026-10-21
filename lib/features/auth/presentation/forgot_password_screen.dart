@@ -22,7 +22,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _email = TextEditingController();
   bool _submitting = false;
   String? _error;
-  String? _success;
 
   @override
   void dispose() {
@@ -35,22 +34,34 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     setState(() {
       _submitting = true;
       _error = null;
-      _success = null;
     });
     try {
       await ref.read(authRepositoryProvider).forgotPassword(_email.text.trim());
       if (!mounted) return;
-      setState(() => _success = ref.i18n.t('auth.resetSent'));
+      final email = Uri.encodeQueryComponent(_email.text.trim());
+      context.push('/reset-password?email=$email');
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error is ApiException && error.message == 'network'
-            ? ref.i18n.t('common.networkError')
-            : error.toString();
+        _error = _resetError(error);
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  String _resetError(Object error) {
+    final i18n = ref.i18n;
+    if (error is ApiException && error.message == 'network') {
+      return i18n.t('common.networkError');
+    }
+    if (error is ApiException && error.statusCode == 429) {
+      return i18n.t('auth.tooManyAttempts');
+    }
+    if (error is ApiException && error.message.isNotEmpty) {
+      return error.message;
+    }
+    return error.toString();
   }
 
   @override
@@ -77,10 +88,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!, style: const TextStyle(color: AppColors.danger)),
-            ],
-            if (_success != null) ...[
-              const SizedBox(height: 12),
-              Text(_success!, style: const TextStyle(color: AppColors.success)),
             ],
             const SizedBox(height: 18),
             AppButton(
