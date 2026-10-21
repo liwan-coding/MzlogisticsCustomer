@@ -89,7 +89,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ref.invalidate(notificationsProvider);
     }
     if (path != null && context.mounted) {
-      context.push(path);
+      // Notifications sit on the root navigator above the shell. Pushing a
+      // shell route from there inserts a second shell page with the same key.
+      context.go(path);
     }
   }
 

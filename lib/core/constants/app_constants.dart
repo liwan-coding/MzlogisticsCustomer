@@ -1,22 +1,14 @@
-import 'package:flutter/foundation.dart';
-
 class AppConstants {
   AppConstants._();
 
   static const String _apiBaseUrlFromEnv = String.fromEnvironment('API_BASE_URL');
   static const String _storageBaseUrlFromEnv = String.fromEnvironment('STORAGE_BASE_URL');
 
-  /// Local MoveX API for devices. Override with `--dart-define=API_BASE_URL=...`.
+  /// Local MoveX API. Override with `--dart-define=API_BASE_URL=...`.
   static const String apiBaseUrlDefault = 'http://192.168.100.153:8000/api/v1';
-  static const int localApiPort = 8000;
 
   static String get apiBaseUrl {
     if (_apiBaseUrlFromEnv.isNotEmpty) return _apiBaseUrlFromEnv;
-    if (kIsWeb) {
-      final host = Uri.base.host;
-      final resolvedHost = host.isEmpty ? '127.0.0.1' : host;
-      return 'http://$resolvedHost:$localApiPort/api/v1';
-    }
     return apiBaseUrlDefault;
   }
 

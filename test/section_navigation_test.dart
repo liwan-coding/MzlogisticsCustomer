@@ -69,6 +69,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('opening a shell route from notifications keeps a single shell page', (
+    tester,
+  ) async {
+    final router = await _pumpShell(tester, const Size(1280, 900));
+
+    router.push('/notifications');
+    await _settle(tester);
+    expect(tester.takeException(), isNull);
+
+    router.go('/jobs/7');
+    await _settle(tester);
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(tester.takeException(), isNull);
+    expect(router.state.uri.path, '/jobs/7');
+    expect(find.byType(BackButtonIcon).hitTestable(), findsOneWidget);
+  });
+
   testWidgets('desktop detail keeps the side navigation', (tester) async {
     final router = await _pumpShell(tester, const Size(1280, 900));
     router.go('/jobs/7');
