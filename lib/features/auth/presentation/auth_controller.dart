@@ -25,6 +25,11 @@ class AuthState {
   final String? token;
 
   bool get isAuthenticated => status == AuthStatus.authenticated && token != null;
+
+  bool get isAccountRestricted {
+    final organizationStatus = user?.organization?.status;
+    return isAuthenticated && organizationStatus != null && organizationStatus != 'active';
+  }
 }
 
 class AuthController extends Notifier<AuthState> {

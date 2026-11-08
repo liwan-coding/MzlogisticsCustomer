@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/account_review_screen.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -63,7 +64,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!auth.isAuthenticated) {
         return authRoutes.contains(location) ? null : '/login';
       }
-      if (authRoutes.contains(location) || location == '/splash') {
+      if (auth.isAccountRestricted) {
+        return location == '/account-review' ? null : '/account-review';
+      }
+      if (authRoutes.contains(location) || location == '/splash' || location == '/account-review') {
         return '/home';
       }
       return null;
@@ -89,6 +93,7 @@ List<RouteBase> customerRoutes({
 
   return [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/account-review', builder: (context, state) => const AccountReviewScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',

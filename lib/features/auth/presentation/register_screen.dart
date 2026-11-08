@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/i18n_controller.dart';
@@ -19,6 +21,9 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  static const _maxBytes = 5 * 1024 * 1024;
+  static const _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
@@ -26,9 +31,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _company = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
-  bool _obscure = true;
-  bool _submitting = false;
+  final _picker = ImagePicker();
+
+  var _accountType = 'company';
+  var _obscure = true;
+  var _submitting = false;
+  Uint8List? _idCard;
+  String? _idCardName;
   String? _error;
+
+  bool get _individual => _accountType == 'individual';
+
+  bool get _canUseCamera {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+  }
 
   @override
   void dispose() {
@@ -41,8 +58,48 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
+  Future<void> _pickIdCard(ImageSource source) async {
+    final file = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 2000,
+    );
+    if (file == null || !mounted) return;
+
+    final i18n = ref.i18n;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+
+    final extension = _extensionOf(file.name);
+    if (extension == null || !_allowedExtensions.contains(extension)) {
+      setState(() => _error = i18n.t('auth.idCardInvalid'));
+      return;
+    }
+    if (bytes.length > _maxBytes) {
+      setState(() => _error = i18n.t('auth.idCardTooLarge'));
+      return;
+    }
+
+    setState(() {
+      _idCard = bytes;
+      _idCardName = 'id-card.$extension';
+      _error = null;
+    });
+  }
+
+  String? _extensionOf(String name) {
+    final dot = name.lastIndexOf('.');
+    if (dot < 0 || dot == name.length - 1) return null;
+    return name.substring(dot + 1).toLowerCase();
+  }
+
   Future<void> _submit() async {
     if (_submitting || !(_formKey.currentState?.validate() ?? false)) return;
+    final i18n = ref.i18n;
+    if (_individual && _idCard == null) {
+      setState(() => _error = i18n.t('auth.idCardRequired'));
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -50,11 +107,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     try {
       await ref.read(authControllerProvider.notifier).register(
             RegisterCustomerPayload(
+              accountType: _accountType,
               name: _name.text.trim(),
               email: _email.text.trim(),
               password: _password.text,
               passwordConfirmation: _confirm.text,
-              companyName: _company.text.trim(),
+              companyName: _individual ? null : _company.text.trim(),
+              idCard: _individual ? _idCard : null,
+              idCardName: _individual ? _idCardName : null,
               phone: _phone.text.trim(),
               locale: ref.read(i18nControllerProvider).value?.locale.languageCode ?? 'en',
             ),
@@ -75,6 +135,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return error.fieldError('email') ??
           error.fieldError('password') ??
           error.fieldError('company_name') ??
+          error.fieldError('id_card') ??
+          error.fieldError('account_type') ??
           error.message;
     }
     return error.toString();
@@ -91,14 +153,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppTextField(
-              label: i18n.t('auth.companyName'),
-              controller: _company,
-              textInputAction: TextInputAction.next,
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? i18n.t('auth.companyRequired') : null,
+            Text(i18n.t('auth.accountType'), style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: _typeChoice('company', i18n.t('auth.company'))),
+                const SizedBox(width: 8),
+                Expanded(child: _typeChoice('individual', i18n.t('auth.individual'))),
+              ],
             ),
             const SizedBox(height: 14),
+            if (!_individual) ...[
+              AppTextField(
+                label: i18n.t('auth.companyName'),
+                controller: _company,
+                textInputAction: TextInputAction.next,
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? i18n.t('auth.companyRequired') : null,
+              ),
+              const SizedBox(height: 14),
+            ],
             AppTextField(
               label: i18n.t('auth.fullName'),
               controller: _name,
@@ -125,6 +199,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
             ),
+            if (_individual) ...[
+              const SizedBox(height: 14),
+              _IdCardPicker(
+                label: i18n.t('auth.idCard'),
+                hint: i18n.t('auth.idCardHint'),
+                filename: _idCardName,
+                chooseLabel: i18n.t('auth.chooseIdPhoto'),
+                cameraLabel: _canUseCamera ? i18n.t('auth.takeIdPhoto') : null,
+                onChoose: () => _pickIdCard(ImageSource.gallery),
+                onCamera: _canUseCamera ? () => _pickIdCard(ImageSource.camera) : null,
+              ),
+            ],
             const SizedBox(height: 14),
             AppTextField(
               label: i18n.t('auth.password'),
@@ -177,6 +263,98 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _typeChoice(String value, String label) {
+    final selected = _accountType == value;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: Material(
+        color: selected ? AppColors.amberSoft : AppColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: selected ? AppColors.orange : AppColors.border),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => setState(() {
+            _accountType = value;
+            _error = null;
+          }),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: selected ? AppColors.orange : AppColors.ink,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IdCardPicker extends StatelessWidget {
+  const _IdCardPicker({
+    required this.label,
+    required this.hint,
+    required this.chooseLabel,
+    required this.onChoose,
+    this.cameraLabel,
+    this.onCamera,
+    this.filename,
+  });
+
+  final String label;
+  final String hint;
+  final String chooseLabel;
+  final String? cameraLabel;
+  final VoidCallback onChoose;
+  final VoidCallback? onCamera;
+  final String? filename;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 6),
+        Text(
+          filename ?? hint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: filename == null ? AppColors.muted : AppColors.ink,
+                height: 1.4,
+              ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            AppButton(
+              label: chooseLabel,
+              variant: AppButtonVariant.secondary,
+              icon: Icons.photo_outlined,
+              onPressed: onChoose,
+            ),
+            if (cameraLabel != null && onCamera != null)
+              AppButton(
+                label: cameraLabel!,
+                variant: AppButtonVariant.ghost,
+                icon: Icons.photo_camera_outlined,
+                onPressed: onCamera,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

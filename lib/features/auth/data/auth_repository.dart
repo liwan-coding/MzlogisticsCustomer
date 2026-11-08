@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/utils/json_utils.dart';
 import '../../../shared/models/user.dart';
@@ -19,9 +21,24 @@ class AuthRepository {
   Future<AuthSession> register(RegisterCustomerPayload payload) async {
     final envelope = await _api.post(
       '/auth/register/customer',
-      data: payload.toJson(),
+      data: _registrationBody(payload),
     );
     return _session(envelope.map);
+  }
+
+  Object _registrationBody(RegisterCustomerPayload payload) {
+    final card = payload.idCard;
+    if (!payload.isIndividual || card == null) {
+      return payload.toJson();
+    }
+
+    return FormData.fromMap({
+      ...payload.toJson(),
+      'id_card': MultipartFile.fromBytes(
+        card,
+        filename: payload.idCardName ?? 'id-card.jpg',
+      ),
+    });
   }
 
   Future<UserAccount> me() async {
