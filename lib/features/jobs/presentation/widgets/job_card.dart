@@ -39,7 +39,9 @@ class JobCard extends StatelessWidget {
         reference.isNotEmpty;
     final from = shipment?.pickupCity ?? shipment?.pickupAddress;
     final to = shipment?.deliveryCity ?? shipment?.deliveryAddress;
-    final provider = job.provider?.displayName(locale);
+    final provider = shipment?.usesAdminSelection == true
+        ? null
+        : job.provider?.displayName(locale);
     final tight = context.isCompact;
     final badge = StatusBadge(status: status, label: i18n.status(status));
     final identity = Column(

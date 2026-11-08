@@ -92,11 +92,12 @@ class JobDetailScreen extends ConsumerWidget {
             accent: AppColors.statusForeground(status).withValues(alpha: 0.85),
             badge: StatusBadge(status: status, label: i18n.status(status)),
             facts: [
-              EntityFact(
-                i18n.t('common.provider'),
-                job.provider?.displayName(locale) ?? '—',
-                icon: Icons.handshake_outlined,
-              ),
+              if (job.shipment?.usesAdminSelection != true)
+                EntityFact(
+                  i18n.t('common.provider'),
+                  job.provider?.displayName(locale) ?? '—',
+                  icon: Icons.handshake_outlined,
+                ),
               EntityFact(
                 i18n.t('common.amount'),
                 formatAmount(job.totalPrice, currency: job.currency ?? 'OMR'),

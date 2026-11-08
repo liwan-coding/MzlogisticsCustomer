@@ -43,8 +43,10 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
       if (!_matches(job.status, _filter)) return false;
       return matchesSearch(query, [
         job.reference,
-        job.provider?.name,
-        job.provider?.nameAr,
+        if (job.shipment?.usesAdminSelection != true) ...[
+          job.provider?.name,
+          job.provider?.nameAr,
+        ],
         job.shipment?.cargoType,
         job.shipment?.reference,
         job.shipment?.pickupCity,
