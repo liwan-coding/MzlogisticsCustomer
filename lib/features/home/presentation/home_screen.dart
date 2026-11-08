@@ -418,45 +418,53 @@ class _Hero extends StatelessWidget {
     final compact = context.isCompact;
     final headline = wide ? 72.0 : (compact ? 32.0 : 36.0);
     final side = wide ? 56.0 : (compact ? 16.0 : 20.0);
+    final photo = Stack(
+      fit: StackFit.expand,
+      children: [
+        _HeroMotion(
+          parallax: true,
+          child: Image.asset(
+            _heroImage,
+            fit: BoxFit.cover,
+            alignment: Alignment.centerRight,
+          ),
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -0.2),
+              radius: 0.9,
+              colors: [
+                Color(0xC4102033),
+                Color(0x88102033),
+                Color(0x00102033),
+              ],
+              stops: [0.15, 0.48, 0.82],
+            ),
+          ),
+        ),
+      ],
+    );
     return SizedBox(
       width: double.infinity,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: wide ? 520 : (compact ? 320 : 380),
+          minHeight: wide ? 520 : (compact ? 300 : 340),
         ),
         child: Stack(
           children: [
             Positioned.fill(
-              child: ClipPath(
-                clipper: const HeroEdgeClipper(),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _HeroMotion(
-                      parallax: true,
-                      child: Image.asset(
-                        _heroImage,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerRight,
+              child: wide
+                  ? ClipPath(
+                      clipper: const HeroEdgeClipper(),
+                      child: photo,
+                    )
+                  : ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(28),
                       ),
+                      child: photo,
                     ),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment(0, -0.2),
-                          radius: 0.9,
-                          colors: [
-                            Color(0xC4102033),
-                            Color(0x88102033),
-                            Color(0x00102033),
-                          ],
-                          stops: [0.15, 0.48, 0.82],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
             SizedBox(
               width: double.infinity,
@@ -465,7 +473,7 @@ class _Hero extends StatelessWidget {
                   side,
                   wide ? 118 : (compact ? 16 : 20),
                   side,
-                  wide ? 120 : (compact ? 56 : 72),
+                  wide ? 120 : (compact ? 28 : 32),
                 ),
                 child: _HeroMotion(
                   child: Align(
@@ -544,11 +552,12 @@ class _Hero extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: _EdgeRoad(from: from, to: to, rtl: rtl),
+            if (wide)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: _EdgeRoad(from: from, to: to, rtl: rtl),
+                ),
               ),
-            ),
           ],
         ),
       ),
